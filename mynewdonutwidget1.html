@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.2.0/dist/chart.min.js"></script>
+    <script>
+        function onLoadCallback() {
+            //console.log("JotForm Custom Widget loaded.");
+        }
+
+        (function () {
+            var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+            po.src = '//js.jotform.com/JotFormCustomWidget.min.js?onload=onLoadCallback';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+        })();
+    </script>
+    <style>
+        #container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start; /* Container'ın yüksekliği içeriğe göre ayarlanacak */
+    gap: 20px;
+    height: auto; /* Yüksekliği otomatik olarak içeriğe göre ayarla */
+    min-height: 100px; /* Minimum yükseklik belirle (isteğe bağlı) */
+}
+
+#chart-container, #data-container {
+    width: 50%;
+    height: auto; /* Yüksekliği otomatik olarak içeriğe göre ayarla */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+#data-container ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    height: auto; /* Yüksekliği otomatik olarak içeriğe göre ayarla */
+}
+
+#data-container li {
+    margin-bottom: 10px;
+}
+
+.expense-management {
+    display: flex;
+    align-items: center;
+    justify-content: start;
+    gap: 1em;
+    width: 100%;
+    background-color: #fff;
+    margin-top: 1em;
+}
+
+.percentage {
+    font-size: 1.3em;
+    font-weight: bold;
+    min-width: 3.2em;
+    color: #333;
+}
+
+.title {
+    font-size: 0.9em;
+    font-weight: 300;
+    color: #25252C;
+    
+}
+.title::first-letter{
+    text-transform: uppercase;
+}
+
+.divider-line {
+    margin-top: 1em;
+    width: 100%;
+    background-color: #25252C;
+    height: 1px;
+}
+
+canvas {
+    max-width: 100%; /* Chart'ın genişliğini container'a göre ayarla */
+    height: auto; /* Yüksekliği otomatik olarak ayarla */
+}
+    </style>
+</head>
+
+<body>
+    <div id="container">
+        <div id="chart-container">
+            <canvas id="myDoughnutChart" style="margin-top: 1em;"></canvas>
+        </div>
+        <div id="data-container">
+            <ul id="expense-list"></ul>
+        </div>
+    </div>
+
+    <script>
+
+
+        const ctx = document.getElementById('myDoughnutChart').getContext('2d');
+
+        const initialData = {
+                labels: ["Example 1", "Example 2","Example 3","Example 4"],
+                    
+                datasets: [
+                {
+                    data: [0, 0], // Başlangıçta 0 yatırım ve 100 kâr olarak ayarlıyoruz
+                    backgroundColor: [
+                        '#FF0000',
+                        '#000000',
+                        '#45F1C2',
+                        "#AAAAAA"
+                    ],
+                },
+            ],
+        };
+
+        const myDoughnutChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: initialData,
+            options: {
+                responsive: true,
+                cutout: '70%', // Orta kısmın boş olmasını sağlar
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (tooltipItem) {
+                                return tooltipItem.label + ': ' + tooltipItem.raw + '%';
+                            }
+                        }
+                    }
+                },
+            },
+            plugins: [{
+                id: 'text',
+                beforeDraw: function (chart) {
+                    var width = chart.width,
+                        height = chart.height,
+                        ctx = chart.ctx;
+
+                    ctx.restore();
+                    var fontSize = (height / 150).toFixed(2);
+                    ctx.font = fontSize + "em sans-serif";
+                    ctx.textBaseline = "middle";
+
+                    var text = chart.hoveredValue || initialData.datasets[0].data[1];
+                    var color = chart.hoveredColor || initialData.datasets[0].backgroundColor[0];
+
+                    ctx.fillStyle = color;
+                    var textX = Math.round((width - ctx.measureText(text).width) / 2),
+                        textY = height / 2;
+
+                    ctx.fillText(text, textX, textY);
+                    ctx.save();
+                }
+            }]
+        });
+
+        function updateChartData(values) {
+            
+    if (Array.isArray(values)) {
+        // Verileri ve etiketleri belirlenen sıraya göre ayarlayın
+        const dataWithLabels = initialData.labels.map((label, index) => {
+            const value = isNaN(values[index]) ? 0.0 : values[index].toFixed(1); // NaN kontrolü
+            return {
+                label: label,
+                value: value,
+                color: initialData.datasets[0].backgroundColor[index]
+            };
+        });
+
+        // Donut chart ve listeyi güncelle
+        myDoughnutChart.data.labels = dataWithLabels.map(item => item.label);
+        myDoughnutChart.data.datasets[0].data = dataWithLabels.map(item => item.value);
+        myDoughnutChart.data.datasets[0].backgroundColor = dataWithLabels.map(item => item.color);
+
+        // Yan taraftaki listeyi değerlere göre descending sıralayarak güncelle
+        const sortedDataWithLabels = [...dataWithLabels].sort((a, b) => b.value - a.value);
+
+        const top7DataWithLabels = sortedDataWithLabels.slice(0, 5);
+
+        const expenseList = document.getElementById('expense-list');
+        expenseList.innerHTML = '';
+        top7DataWithLabels.forEach(item => {
+            if (item.value !== "0.0") { // 0.0 değerlerini filtrele
+                const listItem = document.createElement('li');
+                listItem.innerHTML = `
+                    <div class="expense-management">
+                        <div class="percentage" style="color: ${item.color};">${item.value}%</div>
+                        <div class="title">${item.label}</div>
+                    </div>
+                    <div class="divider-line"></div>
+                `;
+                expenseList.appendChild(listItem);
+            }
+        });
+        function formatNumber(value) {
+            if (value >= 1000000) {
+                return Math.floor(value / 1000000) + 'M';
+            } else if (value >= 1000) {
+                return Math.floor(value / 1000) + 'K';
+            } else {
+                return value.toString();
+            }
+        }
+
+        const total = values.reduce((acc, val) => acc + (isNaN(val) ? 0 : val), 0); // Toplamı hesapla, NaN değerlerini 0 olarak al
+        const formattedTotal = new Intl.NumberFormat('en-EN', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(Math.round(total));
+
+
+        myDoughnutChart.hoveredValue = "£ " + formatNumber(total);
+        myDoughnutChart.hoveredColor = initialData.datasets[0].backgroundColor[0];
+
+        myDoughnutChart.update();
+    } else {
+        console.error("Invalid data for chart:", values);
+    }
+}
+
+        JFCustomWidget.subscribe('populate', function (data) {
+            //console.log(data);
+            const newData = data.value.split(',').map(value => parseFloat(value.trim()));
+            //console.log("Processed Data:", newData);
+
+            updateChartData(newData);
+        });
+
+        JFCustomWidget.subscribe("ready", function (msg) {
+            //console.log("Ready:", msg);
+
+            JFCustomWidget.getFieldsValueByName(["number1", "number2", "raisingPurchase204", "managingMaverick205", "purchaseOrder206"], function (res) {
+                const values = [
+                    parseFloat(res.data[0].value.toFixed(1)),
+                    parseFloat(res.data[1].value.toFixed(1)),
+                    parseFloat(res.data[2].value.toFixed(1)),
+                    parseFloat(res.data[3].value.toFixed(1)),
+                    parseFloat(res.data[4].value.toFixed(1)),
+                    parseFloat(res.data[5].value.toFixed(1)),
+                    parseFloat(res.data[6].value.toFixed(1)),
+                    parseFloat(res.data[7].value.toFixed(1)),
+                    parseFloat(res.data[8].value.toFixed(1)),
+                    parseFloat(res.data[9].value.toFixed(1))
+                ];
+                //console.log("Field values:", values);
+
+                updateChartData(values);
+            });
+        });
+
+        JFCustomWidget.subscribe("submit", function (msg) {
+            var imageData = myDoughnutChart.toBase64Image();
+            var data2 = {
+                valid: true,
+                value: JFCustomWidgetUtils.buildMetadata(
+                    'imagelinks',
+                    [{
+                        'name': "ROI Chart",
+                        'base64': imageData
+                    }]
+                )
+            };
+            JFCustomWidget.sendSubmit(data2);
+        });
+    </script>
+</body>
+
+</html>
