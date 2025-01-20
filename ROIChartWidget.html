@@ -125,29 +125,26 @@
         // Subscribe to ready
         JFCustomWidget.subscribe("ready", function (msg) {
             console.log("Ready:", msg);
+            console.log("lib1:", JFCustomWidget);
+            console.log("lib2:", JFCustomWidgetUtils);
         });
 
         // Subscribe to submit
         JFCustomWidget.subscribe("submit", function (msg) {
-            // const imageData = roiBarChart.toBase64Image();
-            // const data2 = {
-            //     valid: true,
-            //     value: JFCustomWidgetUtils.buildMetadata(
-            //         'imagelinks',
-            //         [
-            //             {
-            //                 'name': "ROI Chart",
-            //                 'base64': imageData
-            //             }
-            //         ]
-            //     )
-            // };
-            // JFCustomWidget.sendSubmit(data2);
-            var data = {
-                value: roiBarChart.canvas.toDataURL("image/png"),
-                valid: true
-            }
-            JFCustomWidget.sendResult(data);
+            const imageData = roiBarChart.toBase64Image();
+            const data2 = {
+                valid: true,
+                value: JFCustomWidgetUtils.buildMetadata(
+                    'imagelinks',
+                    [
+                        {
+                            'name': "ROI Chart",
+                            'base64': imageData
+                        }
+                    ]
+                )
+            };
+            JFCustomWidget.sendSubmit(data2);
         });
     </script>
 </body>
