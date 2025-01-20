@@ -129,20 +129,25 @@
 
         // Subscribe to submit
         JFCustomWidget.subscribe("submit", function (msg) {
-            const imageData = roiBarChart.toBase64Image();
-            const data2 = {
-                valid: true,
-                value: JFCustomWidgetUtils.buildMetadata(
-                    'imagelinks',
-                    [
-                        {
-                            'name': "ROI Chart",
-                            'base64': imageData
-                        }
-                    ]
-                )
-            };
-            JFCustomWidget.sendSubmit(data2);
+            // const imageData = roiBarChart.toBase64Image();
+            // const data2 = {
+            //     valid: true,
+            //     value: JFCustomWidgetUtils.buildMetadata(
+            //         'imagelinks',
+            //         [
+            //             {
+            //                 'name': "ROI Chart",
+            //                 'base64': imageData
+            //             }
+            //         ]
+            //     )
+            // };
+            // JFCustomWidget.sendSubmit(data2);
+            var data = {
+                value: roiBarChart.canvas.toDataURL("image/png"),
+                valid: true
+            }
+            JFCustomWidget.sendResult(data);
         });
     </script>
 </body>
