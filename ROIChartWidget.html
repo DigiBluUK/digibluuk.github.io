@@ -6,6 +6,13 @@
     <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.2.0/dist/chart.min.js"></script>
+    <script type="text/javascript">
+        (function () {
+            var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+            po.src = '//js.jotform.com/JotFormCustomWidget.min.js?onload=onLoadCallback';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+        })();
+    </script>
 </head>
 
 <body>
@@ -93,6 +100,8 @@
             }
 
             roiBarChart.update();
+
+            resizeFrame();
         }
 
         function parseDataString(dataString) {
@@ -106,6 +115,11 @@
             });
 
             return datasets;
+        }
+
+        function resizeFrame() {
+            const currHeight = $("form").height();
+            JFCustomWidget.requestFrameResize({ width: 1000, height: currHeight + 10 })
         }
 
         // Subscribe to ready
