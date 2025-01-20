@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.2.0/dist/chart.min.js"></script>
+</head>
+
+<body>
+    <style>
+        #chart-container {
+            width: 100%;
+            max-width: 800px;
+            margin: auto;
+        }
+    </style>
+    <div id="chart-container">
+        <canvas id="roiBarChart"></canvas>
+    </div>
+    <script>
+        const ctx = document.getElementById('roiBarChart').getContext('2d');
+
+        const roiBarChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5'],
+                datasets: [
+                    {
+                        label: 'Spend',
+                        data: [0, 0, 0, 0, 0],
+                        backgroundColor: 'rgba(255, 205, 86, 0.8)',
+                        borderColor: 'rgba(255, 205, 86, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Savings',
+                        data: [0, 0, 0, 0, 0],
+                        backgroundColor: 'rgba(255, 159, 64, 0.8)',
+                        borderColor: 'rgba(255, 159, 64, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    },
+                    title: {
+                        display: true,
+                        text: 'ROI: Annual Savings vs Spend',
+                        font: {
+                            size: 18
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Year'
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Amount (£)'
+                        }
+                    }
+                }
+            }
+        });
+
+        console.log("JFCustomWidget: ", JFCustomWidget);
+
+        JFCustomWidget.subscribe('populate', fillConditionValue);
+
+        function fillConditionValue(data) {
+            console.log(data);
+
+            const parsedData = parseDataString(data.value);
+            console.log(parsedData);
+
+            roiBarChart.data.datasets[0].data = parsedData.Costs;
+            roiBarChart.data.datasets[1].data = parsedData.Savings;
+
+            if (parsedData.Years) {
+                roiBarChart.data.labels = parsedData.Years;
+            }
+
+            roiBarChart.update();
+        }
+
+        function parseDataString(dataString) {
+            const datasets = {};
+            const parts = dataString.split(';');
+            parts.forEach(part => {
+                const [key, values] = part.split(':');
+                if (key && values) {
+                    datasets[key.trim()] = values.split(',').map(Number);
+                }
+            });
+
+            return datasets;
+        }
+
+        // Subscribe to ready
+        JFCustomWidget.subscribe("ready", function (msg) {
+            console.log("Ready:", msg);
+        });
+
+        // Subscribe to submit
+        JFCustomWidget.subscribe("submit", function (msg) {
+            const imageData = roiBarChart.toBase64Image();
+            const data2 = {
+                valid: true,
+                value: JFCustomWidgetUtils.buildMetadata(
+                    'imagelinks',
+                    [
+                        {
+                            'name': "ROI Chart",
+                            'base64': imageData
+                        }
+                    ]
+                )
+            };
+            JFCustomWidget.sendSubmit(data2);
+        });
+    </script>
+</body>
+
+</html>
