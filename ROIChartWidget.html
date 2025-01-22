@@ -1,8 +1,13 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROI Chart</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
+
     <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.2.0/dist/chart.min.js"></script>
@@ -13,19 +18,28 @@
             var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
         })();
     </script>
-</head>
 
-<body>
     <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+
         #chart-container {
             width: 100%;
-            max-width: 800px;
+            /* max-width: 800px; */
             margin: auto;
         }
     </style>
+</head>
+
+<body>
     <div id="chart-container">
         <canvas id="roiBarChart"></canvas>
     </div>
+
     <script>
         const ctx = document.getElementById('roiBarChart').getContext('2d');
 
@@ -37,15 +51,15 @@
                     {
                         label: 'Spend',
                         data: [0, 0, 0, 0, 0],
-                        backgroundColor: 'rgba(255, 205, 86, 0.8)',
-                        borderColor: 'rgba(255, 205, 86, 1)',
+                        backgroundColor: '#b4d3f8',
+                        borderColor: '#b4d3f8',
                         borderWidth: 1
                     },
                     {
                         label: 'Savings',
                         data: [0, 0, 0, 0, 0],
-                        backgroundColor: 'rgba(255, 159, 64, 0.8)',
-                        borderColor: 'rgba(255, 159, 64, 1)',
+                        backgroundColor: '#0F5DBD',
+                        borderColor: '#0F5DBD',
                         borderWidth: 1
                     }
                 ]
@@ -58,7 +72,7 @@
                     },
                     title: {
                         display: true,
-                        text: 'ROI: Annual Savings vs Spend',
+                        text: '',
                         font: {
                             size: 18
                         }
@@ -68,7 +82,7 @@
                     x: {
                         title: {
                             display: true,
-                            text: 'Year'
+                            text: ''
                         }
                     },
                     y: {
@@ -118,18 +132,16 @@
         }
 
         function resizeFrame() {
-            const currHeight = $("form").height();
-            JFCustomWidget.requestFrameResize({ height: currHeight + 10 })
+            const currHeight = $("chart-container").height();
+            JFCustomWidget.requestFrameResize({ height: currHeight })
         }
 
-        // Subscribe to ready
         JFCustomWidget.subscribe("ready", function (msg) {
             console.log("Ready:", msg);
             console.log("lib1:", JFCustomWidget);
             console.log("lib2:", JFCustomWidgetUtils);
         });
 
-        // Subscribe to submit
         JFCustomWidget.subscribe("submit", function (msg) {
             const imageData = roiBarChart.toBase64Image();
             const data2 = {
