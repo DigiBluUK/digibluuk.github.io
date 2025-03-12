@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+    <link type="text/css" rel="stylesheet"
+        href="https://digiblu.jotform.com/themes/CSS/5e6b428acc8c4e222d1beb91.css?v=3.3.57758" />
+    <link type="text/css" rel="stylesheet"
+        href="https://digiblu.jotform.com/css/styles/payment/payment_styles.css?3.3.57758" />
+    <link type="text/css" rel="stylesheet"
+        href="https://digiblu.jotform.com/css/styles/payment/payment_feature.css?3.3.57758" />
+    <link type="text/css" rel="stylesheet"
+        href="https://digiblu.jotform.com/stylebuilder/static/form-common.css?v=3c1609c" />
+    <!-- Optional JavaScript -->
+    <script type="text/javascript">
+        (function () {
+            var po = document.createElement('script');
+            po.type = 'text/javascript';
+            po.async = true;
+            po.src = '//js.jotform.com/JotFormCustomWidget.min.js?onload=onLoadCallback';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(po, s);
+        })();
+    </script>
+</head>
+
+<style>
+    * {
+        margin: 0px;
+        padding: 0px;
+        border: 0px;
+        box-sizing: border-box;
+    }
+
+    body {
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+
+    .form-input-wide {
+        overflow: hidden;
+        max-width: 100%;
+    }
+
+    .signer-dropdown {
+        overflow: hidden;
+    }
+
+    .loading-message {
+        color: #666;
+        margin-top: 10px;
+    }
+
+    .form-line {
+        padding: 0px;
+        margin: 0px;
+    }
+
+    #ADDropdown {
+        width: 99%;
+        overflow: hidden;
+    }
+
+    select {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    .loading-spinner {
+        display: none;
+    }
+
+    .notFoundMessage {
+        display: none;
+    }
+
+    .loading-spinner .spinner-border {
+        width: 1rem;
+        height: 1rem;
+    }
+
+    .loading-spinner .d-flex {
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    select optgroup {
+        padding: 0;
+        margin: 0;
+    }
+
+    select optgroup[label] {
+        font-weight: bold;
+        padding: 0;
+        margin: 0;
+    }
+
+    select optgroup option {
+        padding-left: 0;
+    }
+
+    option {
+        padding-left: 0;
+    }
+</style>
+
+<body>
+    <div class="signer-dropdown" id="signerDropdown">
+        <div role="main">
+            <ul>
+                <li class="form-line" data-type="control_dropdown" id="ADDropdown">
+                    <div id="ADDropdown" class="form-input-wide" data-layout="half">
+                        <select class="form-dropdown" id="input_ADDropdown" name="ADDropdown_typeA" style="width:100%"
+                            onchange="makeWidgetRequiredOrNot()" data-component="dropdown" aria-label="">
+                            <option value="">Please Select</option>
+                        </select>
+                        <p id="loadingMessage" class="loading-message form-sub-label"></p>
+                        <div class="loading-spinner form-sub-label" id="loadingSpinner">
+                            <div class="d-flex">
+                                <span>Retrieving data...</span>
+                                <div class="spinner-border ml-auto" role="status" aria-hidden="true"></div>
+                            </div>
+                        </div>
+                        <div class="form-sub-label" id="notFoundMessage">
+                            <div class="d-flex">
+                                <span style="color: #ffc107;"><i class="fa fa-exclamation-triangle"></i> ⚠ No results
+                                    found!</span>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        "use strict";
+
+        // Global variables
+        var params;
+        var selectedLocation;
+        var dataReturnedFromCall = null;
+        var _data = {
+            'valid': true,
+            'value': "",
+        };
+        var bodyWidth = 0;
+        var bodyHeight = 0;
+        let signer1Value;
+
+        // DOM element references
+        const signerDropdown = document.getElementById("signerDropdown");
+        const signerSelect = document.getElementById("input_ADDropdown");
+        const loadingMessage = document.getElementById("loadingMessage");
+        const loadingSpinner = document.getElementById("loadingSpinner");
+        const notFoundMessage = document.getElementById("notFoundMessage");
+
+        /**
+        * Handles widget validation logic based on required status.
+        */
+        function makeWidgetRequiredOrNot() {
+            console.log(JFCustomWidget.isWidgetRequired());
+
+            if (JFCustomWidget.isWidgetRequired() === true) {
+                if (_data.value === "" || _data.value === undefined || _data.value === null) {
+                    JFCustomWidget.makeWidgetRequired();
+                    JFCustomWidget.showWidgetError("This field is required.");
+                    _data.valid = true;
+                    return;
+                }
+                else {
+                    JFCustomWidget.makeWidgetNotRequired();
+                    JFCustomWidget.hideWidgetError();
+                    _data.valid = false;
+                    return;
+                }
+            }
+        }
+
+        $(function () {
+            function ADWidget(containerId, formData, params) {
+
+                this.init = init;
+                this.fillConditionValue = fillConditionValue;
+                this.resizeIframe = resizeIframe;
+                this.makeWidgetRequiredOrNot = makeWidgetRequiredOrNot;
+
+                /**
+                * Initializes the widget, fetching initial data if needed.
+                */
+                function init() {
+                    console.log("form Data = ", formData);
+                    console.log("form data value = ", formData.value);
+
+                    if (formData.value !== undefined && formData.value !== "") {
+                        // If formData.value is defined, attempt to fetch signers and match the selected value
+                        try {
+                            fetchSigners();
+                        } catch (error) {
+                            console.error("Error during updateSignerDropdown", error);
+                        }
+                    } else {
+                        fetchSigners();
+                    }
+                }
+
+                /**
+                * Displays loading spinner while fetching data.
+                */
+                function showLoadingMessage() {
+                    loadingMessage.style.display = "none";
+                    notFoundMessage.style.display = "none";
+                    loadingSpinner.style.display = "flex";
+                    resizeIframe();
+                }
+
+                /**
+                * Updates UI with Data retrieved successfully!.
+                */
+                function showSuccessMessage() {
+                    loadingMessage.textContent = "Data retrieved successfully!";
+                    loadingSpinner.style.display = "none";
+                    notFoundMessage.style.display = "none";
+                    resizeIframe();
+                }
+
+                /**
+                * Displays warning message  and hides the loading icon.
+                */
+                function showWarningMessage() {
+                    notFoundMessage.style.display = "flex";
+                    loadingSpinner.style.display = "none";
+                    resizeIframe();
+                }
+
+                /**
+                * Displays error message and hides everthing else.
+                */
+                function showErrorMessage() {
+                    loadingMessage.textContent = "API call error retrieving data!";
+                    loadingSpinner.style.display = "none";
+                    notFoundMessage.style.display = "none";
+                    resizeIframe();
+                }
+
+                function updateSignerDropdown(data) {
+                    signerSelect.innerHTML = "";
+
+                    // Add default "Please Select" option
+                    const defaultOption = document.createElement("option");
+                    defaultOption.value = "";
+                    defaultOption.textContent = "Please Select";
+                    signerSelect.appendChild(defaultOption);
+
+                    if (!data || !data.content || data.content.length === 0) {
+                        console.warn("No data available to populate dropdown");
+                        return;
+                    }
+
+                    data.content.forEach(entry => {
+                        const courseId = entry.answers["4"].answer;
+                        const courseName = entry.answers["3"].answer;
+
+                        const option = document.createElement("option");
+                        option.value = courseId;
+                        option.textContent = `${courseId} - ${courseName}`;
+                        signerSelect.appendChild(option);
+                    });
+
+                    resizeIframe();
+
+                    // Add event listener for change
+                    signerSelect.addEventListener("change", function () {
+                        storeSelectedValue(signerSelect.value);
+                        setValueToField();
+                    });
+
+                    storeSelectedValue(signerSelect.value);
+                    setValueToField();
+                }
+
+                /**
+                * Saves the current selected value to _data.value.
+                * @param {string} value The value to be saved.
+                */
+                function storeSelectedValue(value) {
+                    signer1Value = value;
+                    if (dataReturnedFromCall) {
+                        dataReturnedFromCall.selectedValue = value;
+                    }
+                    console.log(`Updated signer value:`, value);
+                    _data.value = signer1Value;
+                }
+
+                /**
+                * Sets the field values for the signers name and email fields by using JFCustomWidget.setFieldsValueById.
+                */
+                function setValueToField() {
+                    console.log("Selected dropdown value: ", signerSelect.value);
+
+                    let selectedCourse = null;
+                    dataReturnedFromCall?.content?.forEach(entry => {
+                        if (entry.answers["4"].answer === signerSelect.value) {
+                            selectedCourse = entry.answers;
+                        }
+                    });
+
+                    if (selectedCourse) {
+                        JFCustomWidget.setFieldsValueByLabel([
+                            { label: "Course Name", value: selectedCourse["3"].answer },
+                            { label: "Course ID", value: selectedCourse["4"].answer },
+                            { label: "Course Owner", value: selectedCourse["5"].answer },
+                            { label: "Course Owner Email", value: selectedCourse["6"].answer }
+                        ]);
+                    }
+                }
+
+                /**
+                * Makes an API call based on the widgets behaviour setting.
+                */
+                function fetchSigners() {
+                    notFoundMessage.style.display = "none";
+
+                    const apiUrl = `https://eu-api.jotform.com/form/250493468935065/submissions?apiKey=${params.apiKey}`;
+
+                    showLoadingMessage();
+
+                    fetch(apiUrl, {
+                        method: "GET",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                    })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! Status: ${response.status}`);
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            {
+                                if (formData?.value != "" && data != null) {
+                                    // If the selectedValue exists in the fetched data, default to it
+                                    dataReturnedFromCall = data;
+                                    JFCustomWidget.sendData(data);
+                                    signerDropdown.style.display = "block";
+                                    updateSignerDropdown(data, formData?.value);
+                                    showSuccessMessage();
+                                } else {
+                                    // Otherwise, default using normal behavior
+                                    dataReturnedFromCall = data;
+                                    JFCustomWidget.sendData(data);
+                                    signerDropdown.style.display = "block";
+                                    updateSignerDropdown(data);
+                                    showSuccessMessage();
+                                }
+                            }
+                        })
+                        .catch(err => {
+                            console.error("API Error fetching signers", err);
+                            loadingMessage.innerHTML = `<span style="color: red;"><i class="fa fa-times-circle"></i> API call error retrieving data!</span>`;
+                            loadingSpinner.style.display = "none";
+                        });
+                }
+
+                /**
+                * Adjusts the iframe size dynamically based on the window.innerWidth and the window.innerHeight.
+                */
+                function resizeIframe() {
+                    const newWidth2 = document.body.offsetWidth;
+                    const newHeight2 = document.body.offsetHeight;
+
+
+                    const newWidth = window.innerWidth;
+                    const newHeight = window.innerHeight;
+
+                    console.log(`Iframe width: ${newWidth}, height: ${newHeight}`);
+
+                    if (window.frameElement) {
+                        console.log(`True curr val: ${window.frameElement.style.width}`);
+                        window.frameElement.style.width = '99%';
+                        console.log(`Changed updated val: ${window.frameElement.style.width}`);
+                    }
+
+                    console.log(`Body width: ${newWidth2}, height: ${newHeight2}`);
+
+                    if (newWidth !== bodyWidth || newHeight !== bodyHeight) {
+                        bodyWidth = newWidth;
+                        bodyHeight = newHeight;
+
+                        if (window.parent && window.parent.postMessage) {
+                            window.parent.postMessage(
+                                {
+                                    action: 'resizeIframe',
+                                    width: bodyWidth,
+                                    height: bodyHeight
+                                },
+                                '*'
+                            );
+                        }
+                    }
+                }
+
+                let resizeTimeout;
+                window.addEventListener('resize', () => {
+                    clearTimeout(resizeTimeout);
+                    resizeTimeout = setTimeout(resizeIframe, 200);
+                });
+
+                /**
+                * Handles widget validation logic based on required status.
+                */
+                function makeWidgetRequiredOrNot() {
+                    console.log(JFCustomWidget.isWidgetRequired());
+
+                    if (JFCustomWidget.isWidgetRequired() === true) {
+                        if (_data.value === "" || _data.value === undefined || _data.value === null) {
+                            JFCustomWidget.makeWidgetRequired();
+                            JFCustomWidget.showWidgetError("This field is required.");
+                            _data.valid = true;
+                            return;
+                        }
+                        else {
+                            JFCustomWidget.makeWidgetNotRequired();
+                            JFCustomWidget.hideWidgetError();
+                            _data.valid = false;
+                            return;
+                        }
+                    }
+                }
+
+                /**
+                * Handels data sent to widget condtionally and uses that data to call the fetchSigners function.
+                */
+                function fillConditionValue(data) {
+                    console.log("Fill Data", data);
+
+                    console.log("widget settings", params);
+
+                    if (params === undefined) {
+                        params = JFCustomWidget.getWidgetSettings();
+                        console.log("new widget settings", params);
+                    }
+
+                    if (formData.value !== undefined && formData.value !== "") {
+                        // If formData.value is defined, attempt to fetch signers and match the selected value
+                        try {
+                            fetchSigners(selectedLocation);
+                        } catch (error) {
+                            console.error("Error during updateSignerDropdown", error);
+                        }
+                    } else {
+                        fetchSigners(selectedLocation);
+                    }
+                }
+            }
+
+            /**
+            * This event will be fired when form is ready and your field iframe loaded successfully. It will pass following parameters to your callback function.
+            **/
+            JFCustomWidget.subscribe('ready', function (data) {
+                var widget = new ADWidget('Test01', data, JFCustomWidget.getWidgetSettings());
+                JFCustomWidget.subscribe('populate', widget.fillConditionValue);
+                widget.resizeIframe();
+                console.log("Data Ready", data);
+                console.log("JFCustomWidget", JFCustomWidget);
+                console.log("JFCustomWidgetUtils", JFCustomWidgetUtils);
+                widget.init();
+            });
+
+            /**
+            * This event will be fired when form is submitted or when the 'Next' button is pressed which is only available for multi-page forms(page-breaks).
+            **/
+            JFCustomWidget.subscribe('submit', function (data) {
+                makeWidgetRequiredOrNot();
+                console.log("Form submitted with:", data);
+                if (JFCustomWidget.isWidgetRequired() === true) {
+                    JFCustomWidget.sendSubmit({ valid: true, value: _data.valid ? "" : _data.value.toString() });
+                }
+                else {
+                    JFCustomWidget.sendSubmit({ valid: true, value: _data.value.toString() });
+                }
+            });
+        });
+
+    </script>
+</body>
+
+</html>
