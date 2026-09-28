@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN"
+        crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script type="text/javascript">
+        (function () {
+            var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+            po.src = '//js.jotform.com/JotFormCustomWidget.min.js?onload=onLoadCallback';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+        })();
+    </script>
+</head>
+<style>
+    /* #myDiv {
+        overflow: scroll;
+        height: 50%;
+        width: 100%;
+    } */
+
+    table {
+        font-size: smaller;
+    }
+
+    th {
+        border: 1px solid #dedbf0;
+        color: rgb(105,98,147);
+    }
+
+    td {
+        border: 1px solid #dedbf0;
+        width: 60px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    div.pager {
+        text-align: center;
+        margin: 1em 0;
+    }
+
+    div.pager span {
+        display: inline-block;
+        width: 1.8em;
+        height: 1.8em;
+        line-height: 1.8;
+        text-align: center;
+        cursor: pointer;
+        background: #eeebfb;
+        color: #020202;
+        margin-right: 0.5em;
+    }
+
+    div.pager span:hover {
+        background-color: #2d3b64;
+        border-color: #2d3b64;
+        color: #fbf7f7;
+        transition: 0.7s;
+    }
+
+    div.pager span.active {
+        background: #909ae0;
+        color: #fbf7f7;
+    }
+
+    .btn.btn-success {
+        background: #909ae0;
+        color: #fbf7f7;
+        border-color: #909ae0;
+    }
+
+    .btn.btn-success:hover {
+        background-color: #2d3b64;
+        border-color: #2d3b64;
+        transition: 0.7s;
+    }
+</style>
+
+<body>
+    <script type="text/javascript">
+        function getInfoByName() {
+            //Clear table
+            var mytbl = document.getElementById("emptbl");
+            mytbl.getElementsByTagName("tbody")[0].innerHTML = mytbl.rows[0].innerHTML;
+            // document.getElementById("myLoadIcon").classList.add("fa", "fa-spinner", "fa-spin");
+            var clientFormID = "231172796476870"
+            var currClientName = document.getElementById("searchByClientName").value;
+            var params = JFCustomWidget.getWidgetSettings();
+            console.log("REQ: ", currClientName)
+            console.log(`https://innovativebc.jotform.com//server.php?action=getExtGridSubmissions&formID=${clientFormID}&listID=${params["reportId"]}&includeSheetRows=true&excludeArchivedRows=true&start=0&limit=47&sort=id&dir=DESC&startDate=&endDate=&keyword=&_dc=1682849715135&apiKey=${params["apiKey"]}`)
+            jQuery.ajax({
+                url: `https://innovativebc.jotform.com//server.php?action=getExtGridSubmissions&formID=${clientFormID}&listID=${params["reportId"]}&includeSheetRows=true&excludeArchivedRows=true&start=0&limit=47&sort=id&dir=DESC&startDate=&endDate=&keyword=&_dc=1682849715135&apiKey=${params["apiKey"]}`,
+                method: "GET",
+                crossDomain: true,
+                dataType: 'jsonp',
+                // data: {
+                //     "apiKey": params["apiKey"]
+                // },
+                // timeout: 10000,
+                success: function (responseData, textStatus, jqXHR) {
+                    // if (curCaseId === responseData.content[0].)
+                    console.log("RES: ", responseData);
+                    console.log("success: ", responseData);
+                    for (let i = 0; i < responseData.data.length; i++) {
+                        var fullNameFromDb = `${responseData.data[i]["5"] ?? ""}` + " " + `${responseData.data[i]["6"] ?? ""}` + " " + `${responseData.data[i]["7"] ?? ""}`;
+                        console.log("FULLNAME: ", fullNameFromDb);
+                        if (fullNameFromDb.includes(currClientName)) {
+                            console.log("SUBID: ", responseData.data[i].id);
+                            updateTable(params["formId"], responseData.data[i]);
+                            //$("#emptbl").append(`<tr><td>${responseData.data[i]["63"] ?? ""}</td><td>${responseData.data[i]["5"] ?? ""}</td><td>${responseData.data[i]["6"] ?? ""}</td><td>${responseData.data[i]["7"] ?? ""}</td><td>${responseData.data[i]["9"] ?? ""}</td><td>${responseData.data[i]["8"] ?? ""}</td><td>${responseData.data[i]["58"] ?? ""}</td><td>${" "}</td><td><button onClick="onClickRemove(this)">Button</button></td></tr>`);
+                            //resizeFrame();
+                            // document.getElementById("myLoadIcon").classList.remove("fa", "fa-spinner", "fa-spin");
+                        }
+                    }
+                    genPages();
+                    return
+                },
+                error: function (responseData, textStatus, jqXHR) {
+                    console.log(responseData);
+                    // document.getElementById("myLoadIcon").classList.remove("fa", "fa-spinner", "fa-spin");
+                    return
+                }
+            })
+        }
+
+        function getInfoByNameAndDob() {
+            //Clear table
+            var mytbl = document.getElementById("emptbl");
+            mytbl.getElementsByTagName("tbody")[0].innerHTML = mytbl.rows[0].innerHTML;
+            // document.getElementById("myLoadIcon").classList.add("fa", "fa-spinner", "fa-spin");
+            var clientFormID = "231172796476870"
+            var currClientName = document.getElementById("firstName").value === "" ? "-" : document.getElementById("firstName").value;
+            var currClientMiddleName = document.getElementById("middleName").value === "" ? "-" : document.getElementById("middleName").value;
+            var currClientLastName = document.getElementById("lastName").value === "" ? "-" : document.getElementById("lastName").value;
+            var currClientDob = document.getElementById("dateMonth").value === "" ? "-" : document.getElementById("dateMonth").value + "-" + document.getElementById("dateDay").value === "" ? "-" : document.getElementById("dateDay").value + "-" + document.getElementById("dateYear").value === "" ? "-" : document.getElementById("dateYear").value;
+            var params = JFCustomWidget.getWidgetSettings();
+            console.log("REQ: ", currClientName)
+            console.log(`https://innovativebc.jotform.com//server.php?action=getExtGridSubmissions&formID=${clientFormID}&listID=${params["reportId"]}&includeSheetRows=true&excludeArchivedRows=true&start=0&limit=47&sort=id&dir=DESC&startDate=&endDate=&keyword=&_dc=1682849715135&apiKey=${params["apiKey"]}`)
+            jQuery.ajax({
+                url: `https://innovativebc.jotform.com//server.php?action=getExtGridSubmissions&formID=${clientFormID}&listID=${params["reportId"]}&includeSheetRows=true&excludeArchivedRows=true&start=0&limit=47&sort=id&dir=DESC&startDate=&endDate=&keyword=&_dc=1682849715135&apiKey=${params["apiKey"]}`,
+                method: "GET",
+                crossDomain: true,
+                dataType: 'jsonp',
+                // data: {
+                //     "apiKey": params["apiKey"]
+                // },
+                // timeout: 10000,
+                success: function (responseData, textStatus, jqXHR) {
+                    // if (curCaseId === responseData.content[0].)
+                    console.log("RES: ", responseData);
+                    console.log("success: ", responseData);
+                    for (let i = 0; i < responseData.data.length; i++) {
+                        // var fullNameFromDb = `${responseData.data[i]["5"] ?? ""}` + " " + `${responseData.data[i]["6"] ?? ""}` + " " + `${responseData.data[i]["7"] ?? ""}`;
+                        // console.log("FULLNAME: ", fullNameFromDb);
+                        var clientNameFromDb = responseData.data[i]["5"] ?? "";
+                        var clientMiddleNameFromDb = responseData.data[i]["6"] ?? "";
+                        var clientLastNameFromDb = responseData.data[i]["7"] ?? "";
+                        var clientDobFromDb = responseData.data[i]["9"] ?? "";
+                        console.log("CHECK FIRST NAME: ", clientNameFromDb.includes(currClientName))
+                        console.log("CHECK MIDDLE  NAME: ", clientMiddleNameFromDb.includes(currClientMiddleName))
+                        console.log("CHECK LAST  NAME: ", clientLastNameFromDb.includes(currClientLastName))
+                        console.log("CHECK DOB: ", clientDobFromDb.includes(currClientDob))
+
+                        if ((clientNameFromDb.includes(currClientName) && clientLastNameFromDb.includes(currClientLastName)) || (clientNameFromDb.includes(currClientName) || clientLastNameFromDb.includes(currClientLastName)) || clientMiddleNameFromDb.includes(currClientMiddleName) || clientDobFromDb === currClientDob) {
+                            console.log("SUBID: ", responseData.data[i].id);
+                            updateTable(params["formId"], responseData.data[i]);
+                            //$("#emptbl").append(`<tr><td>${responseData.data[i]["63"] ?? ""}</td><td>${responseData.data[i]["5"] ?? ""}</td><td>${responseData.data[i]["6"] ?? ""}</td><td>${responseData.data[i]["7"] ?? ""}</td><td>${responseData.data[i]["9"] ?? ""}</td><td>${responseData.data[i]["8"] ?? ""}</td><td>${responseData.data[i]["58"] ?? ""}</td><td>${" "}</td><td><button onClick="onClickRemove(this)">Button</button></td></tr>`);
+                            //resizeFrame();
+                            // document.getElementById("myLoadIcon").classList.remove("fa", "fa-spinner", "fa-spin");
+                        }
+                    }
+                    genPages();
+                    return
+                },
+                error: function (responseData, textStatus, jqXHR) {
+                    console.log(responseData);
+                    // document.getElementById("myLoadIcon").classList.remove("fa", "fa-spinner", "fa-spin");
+                    return
+                }
+            })
+        }
+
+        function getAllRecords() {
+            //Clear table
+            var mytbl = document.getElementById("emptbl");
+            mytbl.getElementsByTagName("tbody")[0].innerHTML = mytbl.rows[0].innerHTML;
+            // document.getElementById("myLoadIcon").classList.add("fa", "fa-spinner", "fa-spin");
+            var clientFormID = "231172796476870"
+            var params = JFCustomWidget.getWidgetSettings();
+            console.log(`https://innovativebc.jotform.com//server.php?action=getExtGridSubmissions&formID=${clientFormID}&listID=${params["reportId"]}&includeSheetRows=true&excludeArchivedRows=true&start=0&limit=47&sort=id&dir=DESC&startDate=&endDate=&keyword=&_dc=1682849715135&apiKey=${params["apiKey"]}`)
+            jQuery.ajax({
+                url: `https://innovativebc.jotform.com//server.php?action=getExtGridSubmissions&formID=${clientFormID}&listID=${params["reportId"]}&includeSheetRows=true&excludeArchivedRows=true&start=0&limit=47&sort=id&dir=DESC&startDate=&endDate=&keyword=&_dc=1682849715135&apiKey=${params["apiKey"]}`,
+                method: "GET",
+                crossDomain: true,
+                dataType: 'jsonp',
+                // data: {
+                //     "apiKey": params["apiKey"]
+                // },
+                // timeout: 10000,
+                success: function (responseData, textStatus, jqXHR) {
+                    // if (curCaseId === responseData.content[0].)
+                    console.log("RES: ", responseData);
+                    console.log("success: ", responseData);
+                    for (let i = 0; i < responseData.data.length; i++) {
+                        console.log("SUBID: ", responseData.data[i].id);
+                        updateTable(params["formId"], responseData.data[i]);
+                        //$("#emptbl").append(`<tr><td>${responseData.data[i]["63"] ?? ""}</td><td>${responseData.data[i]["5"] ?? ""}</td><td>${responseData.data[i]["6"] ?? ""}</td><td>${responseData.data[i]["7"] ?? ""}</td><td>${responseData.data[i]["9"] ?? ""}</td><td>${responseData.data[i]["8"] ?? ""}</td><td>${responseData.data[i]["58"] ?? ""}</td><td>${" "}</td><td><button onClick="onClickRemove(this)">Button</button></td></tr>`);
+                        //resizeFrame();
+                        // document.getElementById("myLoadIcon").classList.remove("fa", "fa-spinner", "fa-spin");
+                    }
+                    genPages();
+                    return
+                },
+                error: function (responseData, textStatus, jqXHR) {
+                    console.log(responseData);
+                    // document.getElementById("myLoadIcon").classList.remove("fa", "fa-spinner", "fa-spin");
+                    return
+                }
+            })
+        }
+
+        function setFieldValuesByFormId(responseFromForm, currFormID) {
+            console.log(currFormID);
+            console.log("TYPE OF: ", typeof currFormID);
+
+            console.log("TYPE OF RES 1: ", responseFromForm);
+            if (typeof currFormID === "number") {
+                try {
+                    currFormID = currFormID.toString();
+                } catch (error) {
+
+                }
+            }
+            try {
+                JSON.parse(responseFromForm);
+            } catch (error) {
+
+            }
+
+            switch (currFormID) {
+                case "231172796476870":
+                    /*
+                    Test form
+                    Field Name and ID
+                    First Name: 4
+                    Middle Name: 5
+                    Last Name: 6
+                    Country of Origin: 7
+                    Date of Birth: 8
+                    Registration Center: 9
+                    Case ID: 10
+                    Active Client: 11
+                    Checked In: 12
+                    Alert: 13
+                    */
+
+                    JFCustomWidget.setFieldsValueById([{
+                        id: "4",
+                        value: responseFromForm["5"] ?? "" //First Name
+                    }, {
+                        id: "5",
+                        value: responseFromForm["6"] ?? "" //Middle Name
+                    }, {
+                        id: "6",
+                        value: responseFromForm["7"] ?? "" //Last Name
+                    }, {
+                        id: "7",
+                        value: responseFromForm["8"] ?? "" //Country of Origin
+                    }, {
+                        id: "8",
+                        value: responseFromForm["9"] ?? "" //Date of Birth
+                    }, {
+                        id: "9",
+                        value: responseFromForm["62"] ?? "" //Registration Center
+                    }, {
+                        id: "10",
+                        value: responseFromForm["63"] ?? "" //Case ID
+                    }, {
+                        id: "11",
+                        value: responseFromForm["55"] ?? "" //Active Client
+                    }, {
+                        id: "12",
+                        value: responseFromForm["56"] ?? "" //Checked In
+                    }, {
+                        id: "13",
+                        value: responseFromForm["57"] ?? "" //Alert
+                    }]);
+                    break;
+                case "231173448610855": //Client Check-In
+                    JFCustomWidget.setFieldsValueById([{
+                        id: "24",
+                        value: responseFromForm["5"] ?? "" //First Name
+                    }, {
+                        id: "26",
+                        value: responseFromForm["6"] ?? "" //Middle Name
+                    }, {
+                        id: "25",
+                        value: responseFromForm["7"] ?? "" //Last Name
+                    }, {
+                        id: "27",
+                        value: responseFromForm["9"] ?? "" //Date of Birth
+                    }, {
+                        id: "22",
+                        value: responseFromForm["63"] ?? "" //Case ID
+                    }, {
+                        id: "31",
+                        value: responseFromForm["8"] ?? "" //Country of Origin
+                    }, {
+                        id: "32",
+                        value: responseFromForm["62"] ?? "" //Registration Center
+                    }]);
+                    break;
+                case "231156624458862": //Registration Information
+                    JFCustomWidget.setFieldsValueById([{
+                        id: "55",
+                        value: responseFromForm["5"] ?? "" //First Name
+                    }, {
+                        id: "6",
+                        value: responseFromForm["6"] ?? "" //Middle Name
+                    }, {
+                        id: "7",
+                        value: responseFromForm["7"] ?? "" //Last Name
+                    }, {
+                        id: "62",
+                        value: responseFromForm["8"] ?? "" //Country of Origin
+                    }, {
+                        id: "61",
+                        value: responseFromForm["9"] ?? "" //Date of Birth
+                    }, {
+                        id: "10",
+                        value: responseFromForm["62"] ?? "" //Registration Center
+                    }, {
+                        id: "56",
+                        value: responseFromForm["63"] ?? "" //Case ID
+                    }]);
+                    break
+                case "231183863105856": //Needs Assessment
+                    JFCustomWidget.setFieldsValueById([{
+                        id: "155",
+                        value: `${responseFromForm["5"] ?? ""}` + " " + `${responseFromForm["6"] ?? ""}` + " " + `${responseFromForm["7"] ?? ""}` //First Name
+                    }, {
+                        id: "156",
+                        value: responseFromForm["9"] ?? "" //Date of Birth
+                    }, {
+                        id: "163",
+                        value: responseFromForm["63"] ?? "" //Case ID
+                    }, {
+                        id: "157",
+                        value: responseFromForm["8"] ?? "" //Country of Origin
+                    }]);
+                    break
+                case "231166137203850": //Service Referral
+                    JFCustomWidget.setFieldsValueById([{
+                        id: "10",
+                        value: responseFromForm["5"] ?? "" //First Name
+                    }, {
+                        id: "45",
+                        value: responseFromForm["6"] ?? "" //Middle Name
+                    }, {
+                        id: "46",
+                        value: responseFromForm["7"] ?? "" //Last Name
+                    }, {
+                        id: "52",
+                        value: responseFromForm["9"] ?? "" //Date of Birth
+                    }, {
+                        id: "50",
+                        value: responseFromForm["63"] ?? "" //Case ID
+                    }, {
+                        id: "53",
+                        value: responseFromForm["8"] ?? "" //Country of Origin
+                    }, {
+                        id: "54",
+                        value: responseFromForm["62"] ?? "" //Registration Center
+                    }]);
+                    break
+                case "231174162082852": //Client Check-Out
+                    JFCustomWidget.setFieldsValueById([{
+                        id: "23",
+                        value: responseFromForm["5"] ?? "" //First Name
+                    }, {
+                        id: "25",
+                        value: responseFromForm["6"] ?? "" //Middle Name
+                    }, {
+                        id: "24",
+                        value: responseFromForm["7"] ?? "" //Last Name
+                    }, {
+                        id: "26",
+                        value: responseFromForm["9"] ?? "" //Date of Birth
+                    }, {
+                        id: "27",
+                        value: responseFromForm["63"] ?? "" //Case ID
+                    }, {
+                        id: "29",
+                        value: responseFromForm["8"] ?? "" //Country of Origin
+                    }, {
+                        id: "30",
+                        value: responseFromForm["62"] ?? "" //Registration Center
+                    }]);
+                    break
+                case "231184726318861": //Client Wrap-Up (TBD)
+                    /*
+                     Client Creation
+                     Field Name and ID
+                     First Name: 5
+                     Middle Name: 6
+                     Last Name: 7
+                     Country of Origin: 8
+                     Date of Birth: 9
+                     Registration Center: 62
+                     Case ID: 63
+                     Active Client: 55
+                     Checked In: 56
+                     Alert: 57
+                     */
+                    break
+                default:
+                    console.log("NOTHING TO SEE HERE")
+                    break;
+            }
+
+        }
+
+        function buildHTML(buildVer) {
+            if (buildVer === "v1") {
+                document.getElementById("emptbl").innerHTML = `<tr><th>#</th>
+                        <th>FIRST NAME</th>
+                        <th>MIDDLE NAME</th>
+                        <th>LAST NAME</th>
+                        <th>DATE OF BIRTH</th>
+                        <th>COUNTRY OF ORIGIN</th>
+                        <th>CASE STATUS</th>
+                        <th>CHECKIN DATE/TIME</th>
+                        <th> </th>
+                    </tr>`
+            }
+            if (buildVer === "v2") {
+                document.getElementById("emptbl").innerHTML = `<tr><th>#</th>
+                        <th>FIRST NAME</th>
+                        <th>MIDDLE NAME</th>
+                        <th>LAST NAME</th>
+                        <th>DATE OF BIRTH</th>
+                        <th>ORIGIN</th>
+                        <th>ACTIVE CLIENT</th>
+                        <th>CHECKED IN?</th>
+                        <th>STATUS</th>
+                        <th>ALERT</th>
+                        <th> </th>
+                    </tr>`
+            }
+            if (buildVer === "v3") {
+                document.getElementById("emptbl").innerHTML = `<tr><th>#</th>
+                        <th>FIRST NAME</th>
+                        <th>MIDDLE NAME</th>
+                        <th>LAST NAME</th>
+                        <th>DATE OF BIRTH</th>
+                        <th>REFERRAL CATEGORY</th>
+                        <th>REFERRAL TYPE</th>
+                        <th>REFERRAL STATUS</th>
+                        <th> </th>
+                    </tr>`
+            }
+        }
+
+        function updateTable(formIdFromSettings, dateFromDb) { //Registration Information and Needs Assessment
+            const forButton = JSON.stringify(dateFromDb)
+            if (formIdFromSettings === "231183863105856" || formIdFromSettings === "231156624458862") {
+                $("#emptbl").append(`<tr><td>${dateFromDb["63"] ?? ""}</td><td>${dateFromDb["5"] ?? ""}</td><td>${dateFromDb["6"] ?? ""}</td><td>${dateFromDb["7"] ?? ""}</td><td>${dateFromDb["9"] ?? ""}</td><td>${dateFromDb["8"] ?? ""}</td><td>${dateFromDb["58"] ?? ""}</td><td>${" "}</td><td><button class="btn btn-success" onclick='setFieldValuesByFormId(${JSON.stringify(dateFromDb)}, ${formIdFromSettings}); highlight(this)'>Select</button></td></tr>`);
+            }
+            if (formIdFromSettings === "231173448610855" || formIdFromSettings === "231174162082852") { //Client Check-In
+                $("#emptbl").append(`<tr><td>${dateFromDb["63"] ?? ""}</td><td>${dateFromDb["5"] ?? ""}</td><td>${dateFromDb["6"] ?? ""}</td><td>${dateFromDb["7"] ?? ""}</td><td>${dateFromDb["9"] ?? ""}</td><td>${dateFromDb["8"] ?? ""}</td><td>${"Active Client here"}</td><td>${"Checked in? here"}</td><td>${"Alert here"}</td><td>${"Status here"}</td><td><button class="btn btn-success" onclick='setFieldValuesByFormId(${JSON.stringify(dateFromDb)}, ${formIdFromSettings}); highlight(this)'>Select</button></td></tr>`);
+            }
+            if (formIdFromSettings === "231166137203850") { //Service Referral
+                $("#emptbl").append(`<tr><td>${dateFromDb["63"] ?? ""}</td><td>${dateFromDb["5"] ?? ""}</td><td>${dateFromDb["6"] ?? ""}</td><td>${dateFromDb["7"] ?? ""}</td><td>${dateFromDb["9"] ?? ""}</td><td>${"Referral category here"}</td><td>${"Referral type here"}</td><td>${"Referral status here"}</td><td><button class="btn btn-success" onclick='setFieldValuesByFormId(${JSON.stringify(dateFromDb)}, ${formIdFromSettings}); highlight(this)'>Select</button></td></tr>`);
+            }
+        }
+
+        function genPages() {
+            $(".pager").remove();
+            $('table.table.table-sm').each(function () {
+                var currentPage = 0;
+                var numPerPage = 5;
+                var $table = $(this);
+                $table.bind('repaginate', function () {
+                    $table.find('tbody tr').hide().slice(currentPage * numPerPage, (currentPage + 1) * numPerPage).show();
+                });
+                $table.trigger('repaginate');
+                var numRows = $table.find('tbody tr').length;
+                var numPages = Math.ceil(numRows / numPerPage);
+                var $pager = $('<div class="pager"></div>');
+                for (var page = 0; page < numPages; page++) {
+                    $('<span class="page-number"></span>').text(page + 1).bind('click', {
+                        newPage: page
+                    }, function (event) {
+                        currentPage = event.data['newPage'];
+                        $table.trigger('repaginate');
+                        $(this).addClass('active').siblings().removeClass('active');
+                    }).appendTo($pager).addClass('clickable');
+                }
+                $pager.insertAfter($table).find('span.page-number:first').addClass('active');
+            });
+        }
+
+        function highlight(ctrl) {
+            var elements = document.getElementsByTagName('tr');
+            for (var i = 0; i < elements.length; i++)
+                elements[i].style.background = '';
+            var parent = ctrl.parentNode.parentNode;
+            parent.style.background = "rgb(212,207,233)";
+
+        }
+
+        $(function () {
+            function CaseIdLookUp(containerId, formData) {
+
+                /**
+               * Exposed
+               */
+                this.init = init;
+
+                function init() {
+                    console.log("Widget ready: ", formData);
+                    const currSetting = JFCustomWidget.getWidgetSettings();
+
+                    if (currSetting["formId"] === "231183863105856" || currSetting["formId"] === "231156624458862") { //Registration Information and Needs Assessment
+                        buildHTML("v1");
+                    }
+                    if (currSetting["formId"] === "231173448610855" || currSetting["formId"] === "231174162082852") { //Client Check-In
+                        buildHTML("v2");
+                    }
+                    if (currSetting["formId"] === "231166137203850") {  //Service Referral
+                        buildHTML("v3");
+                    }
+
+                    getAllRecords();
+                }
+            }
+
+            JFCustomWidget.subscribe('submit', function () {
+                // send the data
+                // JFCustomWidget.sendSubmit();
+            });
+
+            JFCustomWidget.subscribe('ready', function (data) {
+                var widget = new CaseIdLookUp('Test01', data);
+                widget.init();
+            });
+        });
+
+    </script>
+
+    <div id="searchDiv">
+        <input type="text" id="searchByClientName" name="searchByClientName" placeholder="Search by Client Name"
+            aria-label="" aria-describedby="basic-addon1" size="14">
+        <button id="searchByNameBtn" class="btn btn-success" type="button" onclick="getInfoByName()"><i id="myLoadIcon"
+                class=""></i>
+            Search</button>
+        OR
+        <input type="text" id="firstName" name="firstName" placeholder="First Name" aria-label=""
+            aria-describedby="basic-addon1" size="5">
+        <input type="text" id="middleName" name="middleName" placeholder="Middle Name" aria-label=""
+            aria-describedby="basic-addon1" size="4">
+        <input type="text" id="lastName" name="lastName" placeholder="Last Name" aria-label=""
+            aria-describedby="basic-addon1" size="5">
+        <input type="text" id="dateMonth" name="dateMonth" placeholder="MM" aria-label=""
+            aria-describedby="basic-addon1" size="1">/
+        <input type="text" id="dateDay" name="dateDay" placeholder="DD" aria-label="" aria-describedby="basic-addon1"
+            size="1">/
+        <input type="text" id="dateYear" name="dateYear" placeholder="YYYY" aria-label=""
+            aria-describedby="basic-addon1" size="1">
+        <!-- <input type="date" id="dateOfBirth" name="dateOfBirth" placeholder="MM DD YYYY" aria-label=""
+        aria-describedby="basic-addon1"> -->
+        <button id="searchByNameAndDobBtn" class="btn btn-success" type="button" onclick="getInfoByNameAndDob()"><i
+                id="myLoadIcon" class=""></i>
+            Search</button>
+    </div>
+    <Br></Br>
+    <div id="myDiv" style="height:400px;overflow:auto;">
+        <table id="emptbl" class="table table-sm" style="width: 100%; table-layout: fixed;">
+        </table>
+        <!-- <div id="myDiv" class="input-group mb-3">
+        <input type="text" id="caseID" name="caseID" class="form-control" placeholder="" aria-label=""
+            aria-describedby="basic-addon1">
+        <button id="getInfo" class="btn btn-success" type="button" onclick="getUserInfo()"><i id="myLoadIcon"
+                class=""></i> Lookup</button>
+    </div> -->
+    </div>
+</body>
+
+</html>

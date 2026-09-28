@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+    <script type="text/javascript">
+        (function () {
+            var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+            po.src = '//js.jotform.com/JotFormCustomWidget.min.js?onload=onLoadCallback';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+        })();
+    </script>
+</head>
+
+<body>
+    <script type="text/javascript">
+        var currFormID;
+        var controlFieldsToUpdate;
+        var originalSubmissionId;
+
+        function updateOriginalSubmission() {
+            var widgetParams2 = JFCustomWidget.getWidgetSettings();
+            console.log("FIELDS TO UPDATE: ", controlFieldsToUpdate)
+            controlFieldsToUpdate = {
+                "jf-team-id": "231156469084056",
+                "submission[5]": "m",
+                "submission[6]": "j",
+                "submission[56]": "YES"
+            }
+            console.log(`https://innovativebc.jotform.com/API/submission/${originalSubmissionId}?apiKey=${widgetParams2["apiKey"]}`)
+            jQuery.ajax({
+                url: `https://innovativebc.jotform.com/API/submission/${originalSubmissionId}?apiKey=${widgetParams2["apiKey"]}`,
+                method: "POST",
+                dataType:"jsonp",
+                data: controlFieldsToUpdate,
+                // timeout: 10000,
+                success: function (responseData, textStatus, jqXHR) {
+                    console.log(responseData);
+                },
+                error: function (responseData, textStatus, jqXHR) {
+                    console.log(responseData);
+                }
+            })
+        }
+
+        function updateOriginalSubmission2() {
+            var widgetParams2 = JFCustomWidget.getWidgetSettings();
+            console.log("FIELDS TO UPDATE: ", controlFieldsToUpdate)
+            controlFieldsToUpdate = {
+                "jf-team-id": "231156469084056",
+                // "": "m",
+                // "submission[6]": "j",
+                // "submission[56]": "YES"
+            }
+            console.log(`https://innovativebc.jotform.com/API/submission/${originalSubmissionId}?apiKey=${widgetParams2["apiKey"]}&submission[5]=M&submission[6]=J`)
+            jQuery.ajax({
+                url: `https://innovativebc.jotform.com/API/submission/${originalSubmissionId}?apiKey=${widgetParams2["apiKey"]}`,
+                method: "POST",
+                data: controlFieldsToUpdate,
+                // timeout: 10000,
+                success: function (responseData, textStatus, jqXHR) {
+                    console.log(responseData);
+                },
+                error: function (responseData, textStatus, jqXHR) {
+                    console.log(responseData);
+                }
+            })
+        }
+
+        function checkFormId(currFormID) {
+            console.log(currFormID)
+            var fields = [];
+            /*
+            Control form:
+            Checked in? = 56
+            */
+            switch (currFormID) {
+                case "231173448610855":
+                    //Client Check-In
+                    controlFieldsToUpdate = {
+                        "submission[5]": "m",
+                        "submission[6]": "j",
+                        "submission[56]": "YES"
+                    }
+                    // fields = ["91", "451", "302", "452"];
+                    // JFCustomWidget.getFieldsValueById(fields, function (res) {
+                    //     console.log("res value (Pulse App) = ", res.data)
+
+                    // });
+                    break;
+                case "231174162082852":
+                    //Client Check-Out
+                    controlFieldsToUpdate = {
+                        "submission[5]": "m",
+                        "submission[6]": "j",
+                        "submission[56]": "YES"
+                    }
+                    // fields = ["91", "452", "333", "453"];
+                    // JFCustomWidget.getFieldsValueById(fields, function (res) {
+                    //     console.log("res value (TCS App) = ", res.data)
+                    //     controlFieldsToUpdate = {
+                    //     }
+                    // });
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        $(function () {
+            function UpdateControlForm(containerId, formData, params) {
+
+                /**
+               * Exposed
+               */
+                this.init = init;
+
+                function init() {
+                    console.log(formData)
+                    console.log(params)
+
+                    currFormID = formData["formId"];
+
+                    console.log(JFCustomWidget.getWidgetSettings())
+
+                    JFCustomWidget.getFieldsValueByName(["clientId"], function (res) {
+                        var clientFormID = "231172796476870"
+                        var params = JFCustomWidget.getWidgetSettings();
+                        console.log(`https://innovativebc.jotform.com//server.php?action=getExtGridSubmissions&formID=${clientFormID}&listID=${params["reportId"]}&includeSheetRows=true&excludeArchivedRows=true&start=0&limit=47&sort=id&dir=DESC&startDate=&endDate=&keyword=&_dc=1682849715135&apiKey=${params["apiKey"]}`)
+                        jQuery.ajax({
+                            url: `https://innovativebc.jotform.com//server.php?action=getExtGridSubmissions&formID=${clientFormID}&listID=${params["reportId"]}&includeSheetRows=true&excludeArchivedRows=true&start=0&limit=47&sort=id&dir=DESC&startDate=&endDate=&keyword=&_dc=1682849715135&apiKey=${params["apiKey"]}`,
+                            method: "GET",
+                            crossDomain: true,
+                            dataType: 'jsonp',
+                            // data: {
+                            //     "apiKey": params["apiKey"]
+                            // },
+                            // timeout: 10000,
+                            success: function (responseData, textStatus, jqXHR) {
+                                // if (curCaseId === responseData.content[0].)
+                                console.log("RES: ", responseData);
+                                console.log("success: ", responseData);
+                                for (let i = 0; i < 8; i++) {
+                                    if (responseData.data[i]["63"] === res.data[0].value) {
+                                        console.log("SUBID: ", responseData.data[i].id);
+                                        originalSubmissionId = responseData.data[i].id;
+                                    }
+                                }
+                                return
+                            },
+                            error: function (responseData, textStatus, jqXHR) {
+                                console.log(responseData);
+                                // document.getElementById("myLoadIcon").classList.remove("fa", "fa-spinner", "fa-spin");
+                                return
+                            }
+                        })
+                    });
+
+                    //Check if form data is equal to form IDs
+                    checkFormId(currFormID);
+                }
+
+
+
+            }
+
+            JFCustomWidget.subscribe('ready', function (data) {
+                var widget = new UpdateControlForm('Test01', data, JFCustomWidget.getWidgetSettings());
+                widget.init();
+
+                // JFCustomWidget.subscribe('populate', fillConditionValue);
+
+                // function fillConditionValue(data) {
+                //     JFCustomWidget.hideWidgetError();
+                // }
+            });
+
+            JFCustomWidget.subscribe('submit', function () {
+                var widgetParams = JFCustomWidget.getWidgetSettings();
+                updateOriginalSubmission(widgetParams["apiKey"]);
+                // send the data
+                // JFCustomWidget.sendSubmit({value: "Control form updated", valid:true});
+            });
+        })
+
+    </script>
+</body>
+<button id="searchByNameAndDobBtn" class="btn btn-success" type="button" onclick="updateOriginalSubmission()">Test
+    call</button>
+<button id="searchByNameAndDobBtn2" class="btn btn-success" type="button" onclick="updateOriginalSubmission2()">Test
+    call2</button>
+
+</html>

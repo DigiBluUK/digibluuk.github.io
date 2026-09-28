@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN"
+        crossorigin="anonymous"></script>
+    <script type="text/javascript">
+        (function () {
+            var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+            po.src = '//js.jotform.com/JotFormCustomWidget.min.js?onload=onLoadCallback';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+        })();
+    </script>
+</head>
+
+<body>
+    <style>
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 0;
+            margin: 0;
+            overflow-x: auto;
+            justify-content: flex-start;
+        }
+
+        .option {
+            flex: 0 0 auto;
+            height: 100px;
+            background-color: white;
+            border: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            white-space: normal;
+            padding: 10px;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        .option:hover {
+            border: 4px solid #2F3B65;
+        }
+
+        .option span {
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .option.selected {
+            border: 4px solid #2F3B65;
+        }
+
+        .container .option {
+            flex-basis: calc(20% - 12px);
+            /* Updated line */
+            height: 100px;
+            background-color: white;
+            /* border: 1px solid #ddd; */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            white-space: normal;
+            padding: 10px;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        .container .row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .row {
+            margin-left: 0px !important
+        }
+
+        .option.empty {
+            visibility: hidden;
+            pointer-events: none;
+        }
+    </style>
+    <script type="text/javascript">
+        var _data = { value: "", valid: JFCustomWidget.isWidgetRequired() }
+
+        function resizeFrame(increaseBy) {
+            const currHeight = $("#container").height();
+            console.log("CURRHEIGHT:", currHeight);
+            console.log("CURRHEIGHT + 10:", currHeight + increaseBy);
+            JFCustomWidget.requestFrameResize({ height: currHeight + increaseBy });
+        }
+
+        function makeWidgetRequiredOrNot() {
+            console.log(JFCustomWidget.isWidgetRequired())
+
+            if (JFCustomWidget.isWidgetRequired() === true) {
+                if (_data.value === "" || _data.value === undefined) {
+                    // console.log(JFCustomWidget)
+                    // console.log(JFCustomWidget.isWidgetRequired())
+                    // JFCustomWidget.makeWidgetRequired();
+                    JFCustomWidget.showWidgetError("Please select an option for this question")
+                    _data.valid = true
+                    return
+                }
+                else {
+                    JFCustomWidget.makeWidgetNotRequired();
+                    JFCustomWidget.hideWidgetError();
+                    _data.valid = false
+                    return
+                }
+            }
+        }
+
+        function setOptionFontSize() {
+            var c1 = JFCustomWidget.getWidgetSettings();
+
+            // Get all the option elements
+            const options = document.querySelectorAll('.option');
+
+            options.forEach(option => {
+                const optionText = option.querySelector('span');
+                if (optionText) { // Check if option contains a span element
+                    const optionWidth = option.offsetWidth;
+
+                    // Reset font size to the maximum value
+                    optionText.style.fontSize = c1["fontSize"] + "px";
+
+                    // Reduce font size until the text fits within the option width
+                    // while (optionText.offsetWidth > optionWidth) {
+                    //     let fontSize = parseInt(optionText.style.fontSize);
+                    //     fontSize -= 1;
+                    //     optionText.style.fontSize = `${fontSize}px`;
+                    // }
+
+                    // // Check if the text height exceeds the option height
+                    // if (optionText.offsetHeight > option.clientHeight) {
+                    //     // Reduce font size until the text fits within the option height
+                    //     while (optionText.offsetHeight > option.clientHeight) {
+                    //         let fontSize = parseInt(optionText.style.fontSize);
+                    //         fontSize -= 1;
+                    //         optionText.style.fontSize = `${fontSize}px`;
+                    //     }
+
+                    //     // Check if the text is still too long after reducing the font size
+                    //     if (optionText.offsetWidth > optionWidth) {
+                    //         // Enable text wrapping
+                    //         optionText.style.whiteSpace = 'normal';
+                    //     }
+                    // }
+                }
+            });
+
+            // Check if there are only two or three options on any row
+            const container = document.querySelector('.container');
+            const rows = Array.from(container.children);
+            rows.forEach(row => {
+                const optionsInRow = Array.from(row.children);
+                if (optionsInRow.length === 2) {
+                    optionsInRow.forEach(option => option.classList.add('two-options'));
+                } else {
+                    optionsInRow.forEach(option => option.classList.remove('two-options'));
+                }
+
+                if (optionsInRow.length === 3) {
+                    optionsInRow.forEach(option => option.classList.add('three-options'));
+                } else {
+                    optionsInRow.forEach(option => option.classList.remove('three-options'));
+                }
+            });
+        }
+
+        $(function () {
+            function PickerWidget(containerId, formData) {
+                /**
+               * Exposed
+               */
+                this.init = init;
+
+                function init() {
+                    var c = JFCustomWidget.getWidgetSettings()
+                    console.log(formData)
+                    console.log(c)
+
+                    resizeFrame(30);
+
+                    const param = c["optionLabels"].split(/\r?\n/);
+
+                    var blockLabels = param.slice(0, 10);
+
+                    var allowMultipleSelection;
+
+                    if (c["allowMultipleSelection"] === "Yes") {
+                        allowMultipleSelection = true;
+                    }
+                    if (c["allowMultipleSelection"] === "No") {
+                        allowMultipleSelection = false;
+                    }
+                    var selectedBlocks = [];
+
+                    function generateBlocks(labels) {
+                        var container = $('#container');
+                        container.empty(); // Clear any existing blocks
+
+                        var totalOptions = labels.length;
+
+                        if (totalOptions < 6) {
+                            // Add a special class for two options
+                            container.removeClass('two-options');
+
+                            for (var i = 0; i < totalOptions; i++) {
+                                var label = labels[i];
+                                var block = $('<div></div>').addClass('option').attr('id', 'option' + (i + 1));
+                                var span = $('<span></span>').text(label);
+                                block.append(span);
+                                container.append(block);
+                            }
+                        } else {
+                            var optionsInFirstRow = 0;
+                            var optionsInSecondRow = 0;
+
+                            // Determine the number of options in each row based on the total number of options
+                            if (totalOptions === 6) {
+                                optionsInFirstRow = 3;
+                                optionsInSecondRow = 3;
+                            } else if (totalOptions === 7) {
+                                optionsInFirstRow = 4;
+                                optionsInSecondRow = 3;
+                            } else if (totalOptions === 8) {
+                                optionsInFirstRow = 4;
+                                optionsInSecondRow = 4;
+                            } else if (totalOptions === 9) {
+                                optionsInFirstRow = 5;
+                                optionsInSecondRow = 4;
+                            } else if (totalOptions === 10) {
+                                optionsInFirstRow = 5;
+                                optionsInSecondRow = 5;
+                            }
+
+                            var rows = Math.ceil(totalOptions / optionsInFirstRow); // Calculate the number of rows
+
+                            for (var i = 0; i < rows; i++) {
+                                var row = $('<div></div>').addClass('row');
+                                container.append(row);
+                            }
+
+                            var rowsElements = container.find('.row');
+                            var optionIndex = 0;
+
+                            for (var i = 0; i < rowsElements.length; i++) {
+                                var optionsInCurrentRow = (i === 0) ? optionsInFirstRow : optionsInSecondRow;
+
+                                for (var j = 0; j < optionsInCurrentRow; j++) {
+                                    if (optionIndex >= totalOptions) {
+                                        break; // Exit the loop if all options have been processed
+                                    }
+
+                                    var label = labels[optionIndex];
+                                    var block = $('<div></div>').addClass('option').attr('id', 'option' + (optionIndex + 1));
+                                    var span = $('<span></span>').text(label);
+                                    block.append(span);
+                                    rowsElements.eq(i).append(block);
+
+                                    optionIndex++;
+                                }
+
+                                console.log("Curr Index:", i)
+                                console.log("Curr row:", optionsInCurrentRow)
+
+                                // If it's not the curr option and the first row and second row are not equal to add empty option
+                                if (i !== 0 && optionsInFirstRow !== optionsInSecondRow) {
+                                    var emptyBlock = $('<div></div>').addClass('option empty');
+                                    rowsElements.eq(i).append(emptyBlock);
+                                }
+                            }
+                        }
+
+                        resizeFrame(30);
+
+                        // Call the function initially and on window resize
+                        setOptionFontSize();
+                        window.addEventListener('resize', setOptionFontSize);
+                    }
+
+                    function handleClick(event) {
+                        var clickedBlock = $(event.target).closest('.option');
+                        var isAlreadySelected = clickedBlock.hasClass('selected');
+
+                        if (allowMultipleSelection) {
+                            clickedBlock.toggleClass('selected');
+
+                            var label = clickedBlock.find('span').text();
+                            if (isAlreadySelected) {
+                                // Remove the label from the selectedBlocks array
+                                var index = selectedBlocks.indexOf(label);
+                                if (index !== -1) {
+                                    selectedBlocks.splice(index, 1);
+                                }
+                            } else {
+                                // Add the label to the selectedBlocks array
+                                selectedBlocks.push(label);
+                            }
+
+                            var result = selectedBlocks.join('; ');
+                            console.log('Selected blocks: ' + result);
+                            _data.value = result;
+                            JFCustomWidget.sendSubmit(_data);
+                            JFCustomWidget.sendData(_data);
+                            makeWidgetRequiredOrNot();
+                        } else {
+                            // Remove the 'selected' class from all options
+                            $('.option').removeClass('selected');
+                            clickedBlock.addClass('selected');
+                            var label = clickedBlock.find('span').text();
+                            console.log('Selected: ' + label);
+                            _data.value = label;
+                            JFCustomWidget.sendSubmit(_data);
+                            JFCustomWidget.sendData(_data);
+                            makeWidgetRequiredOrNot();
+                        }
+                    }
+
+                    generateBlocks(blockLabels);
+
+                    $('.option').click(handleClick);
+                }
+
+            }
+
+            JFCustomWidget.subscribe('submit', function () {
+                makeWidgetRequiredOrNot();
+                JFCustomWidget.sendSubmit(_data);
+            });
+
+            JFCustomWidget.subscribe('ready', function (data) {
+                var widget = new PickerWidget('Test01', data);
+                widget.init();
+            });
+        });
+    </script>
+    <div class="container" id="container">
+    </div>
+</body>
+
+</html>

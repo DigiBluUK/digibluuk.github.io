@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+    <script type="text/javascript">
+        (function () {
+            var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+            po.src = '//js.jotform.com/JotFormCustomWidget.min.js?onload=onLoadCallback';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+        })();
+    </script>
+</head>
+
+<body>
+    <script type="text/javascript">
+        var currTaskId;
+
+        $(function () {
+            function UpdateControlForm(containerId, formData, params) {
+
+                /**
+               * Exposed
+               */
+                this.init = init;
+                this.updateOriginalSubmission = updateOriginalSubmission;
+                this.markRefAsComplete = markRefAsComplete;
+
+
+                var currFormID = formData["formID"];
+                var controlFieldsToUpdate;
+                var originalSubmissionId;
+                var refNumber;
+
+                function init() {
+                    console.log(formData)
+                    console.log(params)
+
+                    console.log(JFCustomWidget.getWidgetSettings())
+
+                    JFCustomWidget.getFieldsValueByName(["originalSubmission"], function (res) {
+                        console.log("originalSubmission = ", res.data[0].value)
+                        originalSubmissionId = res.data[0].value;
+                    });
+
+                    //Check if form data is equal to form IDs
+                    checkFormId(currFormID);
+                }
+
+                function updateOriginalSubmission(apiKey) {
+                    console.log(`https://acaciumgroup.jotform.com/API/submission/${originalSubmissionId}?apiKey=${apiKey}`)
+                    jQuery.ajax({
+                        url: `https://acaciumgroup.jotform.com/API/submission/${originalSubmissionId}?apiKey=${apiKey}`,
+                        method: "POST",
+                        data: controlFieldsToUpdate,
+                        // timeout: 10000,
+                        success: function (responseData, textStatus, jqXHR) {
+                            console.log(responseData);
+                        },
+                        error: function (responseData, textStatus, jqXHR) {
+                            console.log(responseData);
+                        }
+                    })
+                }
+
+                function getTaskId(approvalName) {
+                    console.log(`https://acaciumgroup.jotform.com/API/workflow/submission/${originalSubmissionId}/tasks?limit=50&filter={'status:ne':['COMPLETED','CANCELED'],'onlyAssignee':'1'}`)
+                    jQuery.ajax({
+                        url: `https://acaciumgroup.jotform.com/API/workflow/submission/${originalSubmissionId}/tasks?limit=50&filter={'status:ne':['COMPLETED','CANCELED'],'onlyAssignee':'1'}`,
+                        method: "GET",
+                        dataType: "jsonp",
+                        data: {
+                            "apiKey": params["apiKey"]
+                        },
+                        // timeout: 10000,
+                        success: function (responseData, textStatus, jqXHR) {
+                            var currTaskList = responseData?.content[0]?.taskList;
+                            console.log(currTaskList)
+
+                            for (let i = 0; i < currTaskList?.length; i++) {
+                                //   // const element = array[index];
+                                if (currTaskList[i]?.properties?.taskName === approvalName) {
+                                    currTaskId = currTaskList[i]?.id;
+                                    console.log(currTaskId);
+                                    return
+                                }
+                            }
+                            return
+                        },
+                        error: function (responseData, textStatus, jqXHR) {
+                            console.log(responseData);
+                            return
+                        }
+                    })
+                }
+
+                function markRefAsComplete(taskID) {
+                    console.log(`https://acaciumgroup.jotform.com/API/workflow/task/${taskID}/complete?apiKey=${params["apiKey"]}`)
+                    jQuery.ajax({
+                        url: `https://acaciumgroup.jotform.com/API/workflow/task/${taskID}/complete?apiKey=${params["apiKey"]}`,
+                        method: "POST",
+                        data: JSON.stringify({ "outcomeID": 1, "comment": "" }),
+                        // timeout: 10000,
+                        success: function (responseData, textStatus, jqXHR) {
+                            console.log(responseData);
+                        },
+                        error: function (responseData, textStatus, jqXHR) {
+                            console.log(responseData);
+                            return
+                        }
+                    })
+                }
+
+                function checkFormId(currFormID) {
+                    console.log(currFormID)
+                    var fields = [];
+                    /*
+                    Control form:
+                    78 = status,
+                    14 = NMC Pin,
+                    227 = On the DBS, 
+                    15 = DBS Pin,
+                    245 = Widget data
+                    */
+                    switch (currFormID) {
+                        case "221944213799868":
+                            //Pulse App
+                            fields = ["91", "451", "302", "452"];
+                            JFCustomWidget.getFieldsValueById(fields, function (res) {
+                                console.log("res value (Pulse App) = ", res.data)
+                                controlFieldsToUpdate = {
+                                    "submission[78]": "Awaiting Review",
+                                    "submission[14]": res.data[0].value,
+                                    "submission[227]": res.data[1].value,
+                                    "submission[15]": res.data[2].value,
+                                    "submission[245]": res.data[3].value
+                                }
+                            });
+                            break;
+                        case "222023394876863":
+                            //TCS App
+                            fields = ["91", "452", "333", "453"];
+                            JFCustomWidget.getFieldsValueById(fields, function (res) {
+                                console.log("res value (TCS App) = ", res.data)
+                                controlFieldsToUpdate = {
+                                    "submission[78]": "Awaiting Review",
+                                    "submission[14]": res.data[0].value,
+                                    "submission[227]": res.data[1].value,
+                                    "submission[15]": res.data[2].value,
+                                    "submission[245]": res.data[3].value
+                                }
+                            });
+                            break;
+                        case "221883749204057":
+                            //Onboarding pack
+                            controlFieldsToUpdate = {
+                                "submission[33]": "Awaiting Review"
+                            }
+                            break;
+                        case "222003834675049":
+                            //Ts&Cs pack
+                            controlFieldsToUpdate = {
+                                "submission[34]": "Awaiting Review"
+                            }
+                            break;
+                        case "221574004656352":
+                            //Pulse Ref
+                            fields = ["refereeName[first]", "refereeName[last]", "refereeEmail", "dateOf259[day]", "dateOf259[month]", "dateOf259[year]",
+                                "dateOf260[day]", "dateOf260[month]", "dateOf260[year]"];
+                            // fields = ["13", "16", "259", "260"];
+                            JFCustomWidget.getFieldsValueByName(["refNumber"], function (res) {
+                                console.log("refNumber = ", res.data[0].value)
+                                refNumber = res.data[0].value;
+                                checkRefToUpdate(refNumber, fields);
+                            });
+                            break;
+                        case "222085492413857":
+                            //TCS Ref
+                            fields = ["refereeName[first]", "refereeName[last]", "refereeEmail", "startDate282[day]", "startDate282[month]", "startDate282[year]",
+                                "endDate283[day]", "endDate283[month]", "endDate283[year]"];
+                            // fields = ["13", "16", "282", "283"];
+                            JFCustomWidget.getFieldsValueByName(["refNumber"], function (res) {
+                                console.log("refNumber = ", res.data[0].value)
+                                refNumber = res.data[0].value;
+                                checkRefToUpdate(refNumber, fields);
+                            });
+                            break;
+                        case "221914243957359":
+                            //Ops control
+                            fields = ["nmcCheck", "hirevueAccount", "additionalInformation33", "referee167", "referee268", "referee372", "referee4127", "referee5136",
+                                "referee6145", "additionalInformation34", "occupationalHealth158", "dbsCheck"]
+                            // fields = ["13", "16", "282", "283"];
+                            JFCustomWidget.getFieldsValueByName(fields, function (res) {
+                                console.log("refNumber = ", res.data.value)
+                                var nmcCheckStatus = res.data[0].value;
+                                var hirevueAccountCheckStatus = res.data[1].value;
+                                var onBoardCheckStatus = res.data[2].value;
+                                var Ref1CheckStatus = res.data[3].value;
+                                var Ref2CheckStatus = res.data[4].value;
+                                var Ref3CheckStatus = res.data[5].value;
+                                var Ref4CheckStatus = res.data[6].value;
+                                var Ref5CheckStatus = res.data[7].value;
+                                var Ref6CheckStatus = res.data[8].value;
+                                var TermPackCheckStatus = res.data[9].value;
+                                var OccHealthCheckStatus = res.data[10].value;
+                                var dbsCheckStatus = res.data[11].value;
+                                //checkRefToUpdate(refNumber, fields);
+
+                                if (nmcCheckStatus === "In Progress") {
+                                    setStartDates("179")
+                                }
+                                if (hirevueAccountCheckStatus === "In Progress") {
+                                    setStartDates("181")
+                                }
+                                if (onBoardCheckStatus === "In Progress") {
+                                    setStartDates("220")
+                                }
+                                if (Ref1CheckStatus === "In Progress") {
+                                    setStartDates("183")
+                                }
+                                if (Ref2CheckStatus === "In Progress") {
+                                    setStartDates("185")
+                                }
+                                if (Ref3CheckStatus === "In Progress") {
+                                    setStartDates("187")
+                                }
+                                if (Ref4CheckStatus === "In Progress") {
+                                    setStartDates("187")
+                                }
+                                if (Ref5CheckStatus === "In Progress") {
+                                    setStartDates("191")
+                                }
+                                if (Ref6CheckStatus === "In Progress") {
+                                    setStartDates("193")
+                                }
+                                if (TermPackCheckStatus === "In Progress") {
+                                    setStartDates("222")
+                                }
+                                if (OccHealthCheckStatus === "In Progress") {
+                                    setStartDates("195")
+                                }
+                                if (dbsCheckStatus === "In Progress") {
+                                    setStartDates("197")
+                                }
+                            });
+                            break;
+                        case "222793557017057": //Test Remove later
+                            fields = ["typeA"]
+                            // fields = ["13", "16", "282", "283"];
+                            JFCustomWidget.getFieldsValueByName(fields, function (res) {
+                                console.log("refNumber = ", res.data.value)
+                                var nmcCheckStatus = res.data[0].value;
+                                //checkRefToUpdate(refNumber, fields);
+
+                                if (nmcCheckStatus === "In Progress") {
+                                    setStartDates("3")
+                                }
+                            });
+                            break;
+                        case "222404538712047": //Test App remove later
+                            // fields = ["q5_nmcPin", "q6_doYou", "q7_whatIs", "q8_widgetStorage"];
+                            fields = ["5", "12", "7", "11"];
+                            JFCustomWidget.getFieldsValueById(fields, function (res) {
+                                console.log("res value (Test form) = ", res.data)
+                                controlFieldsToUpdate = {
+                                    "submission[78]": "Awaiting Review",
+                                    "submission[14]": res.data[0].value,
+                                    "submission[227]": res.data[1].value,
+                                    "submission[15]": res.data[2].value,
+                                    "submission[245]": res.data[3].value
+                                }
+                            });
+                            break;
+                        case "222514431776051": //Test Ref remove later
+                            fields = ["refereeName[first]", "refereeName[last]", "q6_refereeEmail", "startDate[day]", "startDate[month]", "startDate[year]",
+                                "endDate[day]", "endDate[month]", "endDate[year]"];
+                            JFCustomWidget.getFieldsValueByName(["refNumber"], function (res) {
+                                console.log("refNumber = ", res.data[0].value)
+                                refNumber = res.data[0].value;
+                                checkRefToUpdate(refNumber, fields);
+                            });
+                            break
+                        default:
+                            break;
+                    }
+                }
+
+                function setStartDates(dateFieldToUpdate) {
+                    var today = new Date();
+                    var dd = String(today.getDate()).padStart(2, '0');
+                    var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+                    var yyyy = today.getFullYear();
+
+                    var currDate = dd + '/' + mm + '/' + yyyy;
+                    var fillArr = [];
+                    fillArr.push({
+                        id: "lite_mode_3",
+                        value: currDate
+                    });
+                    console.log("fillArr = ", fillArr)
+                    JFCustomWidget.setFieldsValueById(fillArr);
+                }
+
+                function checkRefToUpdate(refNum, fieldsToGetValues) {
+                    switch (refNum) {
+                        case "1":
+                            JFCustomWidget.getFieldsValueByName(fieldsToGetValues, function (res) {
+                                console.log("res value (Ref 1) = ", res.data)
+                                controlFieldsToUpdate = {
+                                    "submission[67]": "Response Received",
+                                    "submission[17][first]": res.data[0].value, //first name
+                                    "submission[17][last]": res.data[1].value, //last name
+                                    "submission[18]": res.data[2].value, //email
+                                    "submission[228][day]": res.data[3].value, //start date day
+                                    "submission[228][month]": res.data[4].value, //start date month
+                                    "submission[228][year]": res.data[5].value, //start date year
+                                    "submission[229][day]": res.data[6].value, //end date day
+                                    "submission[229][month]": res.data[7].value, //end date month
+                                    "submission[229][year]": res.data[8].value //end date year
+                                }
+                            })
+                            getTaskId("Approve Ref 1?")
+                            break;
+                        case "2":
+                            JFCustomWidget.getFieldsValueByName(fieldsToGetValues, function (res) {
+                                console.log("res value (Ref 2) = ", res.data)
+                                controlFieldsToUpdate = {
+                                    "submission[68]": "Response Received",
+                                    "submission[19][first]": res.data[0].value, //first name
+                                    "submission[19][last]": res.data[1].value, //last name
+                                    "submission[20]": res.data[2].value, //email
+                                    "submission[230][day]": res.data[3].value, //start date day
+                                    "submission[230][month]": res.data[4].value, //start date month
+                                    "submission[230][year]": res.data[5].value, //start date year
+                                    "submission[231][day]": res.data[6].value, //end date day
+                                    "submission[231][month]": res.data[7].value, //end date month
+                                    "submission[231][year]": res.data[8].value //end date year
+                                }
+                            })
+                            getTaskId("Approve Ref 2?")
+                            break;
+                        case "3":
+                            JFCustomWidget.getFieldsValueByName(fieldsToGetValues, function (res) {
+                                console.log("res value (Ref 3) = ", res.data)
+                                controlFieldsToUpdate = {
+                                    "submission[72]": "Response Received",
+                                    "submission[70][first]": res.data[0].value, //first name
+                                    "submission[70][last]": res.data[1].value, //last name
+                                    "submission[71]": res.data[2].value, //email
+                                    "submission[232][day]": res.data[3].value, //start date day
+                                    "submission[232][month]": res.data[4].value, //start date month
+                                    "submission[232][year]": res.data[5].value, //start date year
+                                    "submission[233][day]": res.data[6].value, //end date day
+                                    "submission[233][month]": res.data[7].value, //end date month
+                                    "submission[233][year]": res.data[8].value //end date year
+                                }
+                            })
+                            getTaskId("Approve Ref 3?")
+                            break;
+                        case "4":
+                            JFCustomWidget.getFieldsValueByName(fieldsToGetValues, function (res) {
+                                console.log("res value (Ref 4) = ", res.data)
+                                controlFieldsToUpdate = {
+                                    "submission[127]": "Response Received",
+                                    "submission[123][first]": res.data[0].value, //first name
+                                    "submission[123][last]": res.data[1].value, //last name
+                                    "submission[126]": res.data[2].value, //email
+                                    "submission[234][day]": res.data[3].value, //start date day
+                                    "submission[234][month]": res.data[4].value, //start date month
+                                    "submission[234][year]": res.data[5].value, //start date year
+                                    "submission[235][day]": res.data[6].value, //end date day
+                                    "submission[235][month]": res.data[7].value, //end date month
+                                    "submission[235][year]": res.data[8].value //end date year
+                                }
+                            })
+                            getTaskId("Approve Ref 4?")
+                            break;
+                        case "5":
+                            JFCustomWidget.getFieldsValueByName(fieldsToGetValues, function (res) {
+                                console.log("res value (Ref 5) = ", res.data)
+                                controlFieldsToUpdate = {
+                                    "submission[136]": "Response Received",
+                                    "submission[132][first]": res.data[0].value, //first name
+                                    "submission[132][last]": res.data[1].value, //last name
+                                    "submission[135]": res.data[2].value, //email
+                                    "submission[236][day]": res.data[3].value, //start date day
+                                    "submission[236][month]": res.data[4].value, //start date month
+                                    "submission[236][year]": res.data[5].value, //start date year
+                                    "submission[237][day]": res.data[6].value, //end date day
+                                    "submission[237][month]": res.data[7].value, //end date month
+                                    "submission[237][year]": res.data[8].value //end date year
+                                }
+                            })
+                            getTaskId("Approve Ref 5?")
+                            break;
+                        case "6":
+                            JFCustomWidget.getFieldsValueByName(fieldsToGetValues, function (res) {
+                                console.log("res value (Ref 6) = ", res.data)
+                                controlFieldsToUpdate = {
+                                    "submission[145]": "Response Received",
+                                    "submission[141][first]": res.data[0].value, //first name
+                                    "submission[141][last]": res.data[1].value, //last name
+                                    "submission[144]": res.data[2].value, //email
+                                    "submission[238][day]": res.data[3].value, //start date day
+                                    "submission[238][month]": res.data[4].value, //start date month
+                                    "submission[238][year]": res.data[5].value, //start date year
+                                    "submission[239][day]": res.data[6].value, //end date day
+                                    "submission[239][month]": res.data[7].value, //end date month
+                                    "submission[239][year]": res.data[8].value //end date year
+                                }
+                            })
+                            getTaskId("Approve Ref 6?")
+                            break;
+
+                        default:
+                            break;
+                    }
+                }
+
+            }
+
+            JFCustomWidget.subscribe('ready', function (data) {
+                var widget = new UpdateControlForm('Test01', data, JFCustomWidget.getWidgetSettings());
+                widget.init();
+
+                JFCustomWidget.subscribe('populate', fillConditionValue);
+
+                function fillConditionValue(data) {
+                    JFCustomWidget.hideWidgetError();
+                }
+
+                JFCustomWidget.subscribe('submit', function () {
+                    widgetParams = JFCustomWidget.getWidgetSettings()
+                    widget.updateOriginalSubmission(widgetParams["apiKey"]);
+                    if (currTaskId !== undefined && currTaskId !== "") {
+                        widget.markRefAsComplete(currTaskId);
+                    }
+
+                    // send the data
+                    // JFCustomWidget.sendSubmit({value: "Control form updated", valid:true});
+                });
+            });
+        })
+
+    </script>
+</body>
+
+</html>

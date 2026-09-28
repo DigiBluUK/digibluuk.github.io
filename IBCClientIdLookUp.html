@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN"
+        crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script type="text/javascript">
+        (function () {
+            var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+            po.src = '//js.jotform.com/JotFormCustomWidget.min.js?onload=onLoadCallback';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+        })();
+    </script>
+</head>
+<style>
+</style>
+
+<body>
+    <script type="text/javascript">
+        var _data = { value: "", valid: true }
+
+        function createHtmlTable(obj) {
+            // Create the table element
+            var table = document.createElement('table');
+            table.classList.add('table'); // Add the 'table' class
+
+            // Create the table header row
+            var thead = document.createElement('thead');
+            var headerRow = document.createElement('tr');
+
+            // Loop through the object keys and create table headers
+            for (var key in obj) {
+                var th = document.createElement('th');
+                th.textContent = key;
+                headerRow.appendChild(th);
+            }
+
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            // Create the table body
+            var tbody = document.createElement('tbody');
+            var dataRow = document.createElement('tr');
+
+            // Loop through the object values and create table data cells
+            for (var value in obj) {
+                var td = document.createElement('td');
+                td.textContent = obj[value];
+                dataRow.appendChild(td);
+            }
+
+            tbody.appendChild(dataRow);
+            table.appendChild(tbody);
+
+            var container = document.getElementById('table-container');
+            container.appendChild(table);
+        }
+
+        function resizeFrame(increaseBy) {
+            const currHeight = $("#wrapper").height();
+            console.log("CURRHEIGHT:", currHeight);
+            console.log("CURRHEIGHT + 10:", currHeight + increaseBy);
+            JFCustomWidget.requestFrameResize({ height: currHeight + increaseBy });
+        }
+
+        function getClientInfo() {
+            var tblContainer = document.getElementById("table-container");
+            console.log("Before", tblContainer);
+            tblContainer.innerHTML = "";
+            console.log("After", tblContainer);
+            const params = JFCustomWidget.getWidgetSettings();
+            const userInput = document.getElementById('clientInfo').value;
+            _data.value = userInput;
+            JFCustomWidget.sendData(_data);
+            // var userInfoName = document.getElementById("userInfoName");
+            // var userInfoOrigin = document.getElementById("userInfoOrigin");
+
+            document.getElementById("myLoadIcon").classList.add("fa", "fa-spinner", "fa-spin");
+
+            console.log("HERE");
+            console.log(``)
+            jQuery.ajax({
+                url: `https://w5oj2da5kj.execute-api.eu-west-1.amazonaws.com/SalesForce/Client/${userInput}/Contact`,
+                method: "GET",
+                // crossDomain: true,
+                dataType: 'json',
+                headers: {
+                    // "accept": "application/json",
+                    // "Access-Control-Allow-Origin": "*",
+                    "apikey": params["apiKey"]
+                },
+                // data: {
+                //     "apiKey": params["apiKey"]
+                // },
+                // timeout: 10000,
+                success: function (responseData, textStatus, jqXHR) {
+                    console.log("success: ", responseData);
+                    document.getElementById("myLoadIcon").classList.remove("fa", "fa-spinner", "fa-spin");
+                    var myObject = {
+                        "Name": responseData.Name,
+                        "DOB": responseData.Birth_Date__c,
+                        "Country you arrived from": responseData.What_country_have_you_arrived_from__c
+                    }
+                    createHtmlTable(myObject);
+                    // userInfoName.innerHTML = `Name: ${responseData.Name}`;
+                    // userInfoOrigin.innerHTML = `Country you arrived from: ${responseData.What_country_have_you_arrived_from__c}`;
+                    resizeFrame(10);
+                    JFCustomWidget.setFieldsValueById([{
+                        id: "336",
+                        value: responseData.Id
+                    }, {
+                        id: "337",
+                        value: responseData.Service_Center_Case__c
+                    }]);
+                    return
+                },
+                error: function (responseData, textStatus, jqXHR) {
+                    console.log("error: ", responseData);
+                    document.getElementById('clientInfo').value = "Something went wrong please try again";
+                    document.getElementById("myLoadIcon").classList.remove("fa", "fa-spinner", "fa-spin");
+                    return
+                }
+            })
+
+            // JFCustomWidget.sendSubmit({ valid: false, value: `Please double click this cell to open widget. Email:${candEmail} IQX Number:${iqxNum} ` });
+        }
+
+        function makeWidgetRequiredOrNot() {
+            if (JFCustomWidget.isWidgetRequired() === true) {
+                console.log(JFCustomWidget.isWidgetRequired())
+
+                JFCustomWidget.getFieldsValueById(["336", "337"], function (res) {
+                    console.log("res by Name= ", res.data[0].value);
+                    var valueInIdField = res.data[0].value
+                    var valueInCountryField = res.data[1].value
+                })
+
+                if (valueInIdField === "" || valueInCountryField === "") {
+                    // console.log(JFCustomWidget)
+                    // console.log(JFCustomWidget.isWidgetRequired())
+                    // JFCustomWidget.makeWidgetRequired();
+                    JFCustomWidget.showWidgetError("Please try searching for your record again as your data has not been set correctly")
+                    _data.valid = true
+                    return
+                }
+                else {
+                    JFCustomWidget.makeWidgetNotRequired();
+                    JFCustomWidget.hideWidgetError();
+                    _data.valid = false
+                    return
+                }
+            }
+            else {
+                JFCustomWidget.makeWidgetNotRequired();
+                JFCustomWidget.hideWidgetError();
+                _data.valid = false
+                return
+            }
+        }
+
+        $(function () {
+            function GetPrefilledURLWidget(containerId, formData) {
+                /**
+               * Exposed
+               */
+                this.init = init;
+
+                function init() {
+                    console.log(formData);
+                    console.log(JFCustomWidgetUtils)
+                    console.log(JFCustomWidget)
+                    // console.log("getAllQueryString", JFCustomWidget.getAllQueryString())
+                    // console.log("getEnterprise", JFCustomWidget.getEnterprise())
+                    // console.log("getParentOrigin", JFCustomWidget.getParentOrigin())
+                }
+            }
+
+            JFCustomWidget.subscribe('submit', function () {
+                var tblContainer1 = document.getElementById("table-container");
+                console.log("Before", tblContainer1);
+                tblContainer1.innerHTML = "";
+                console.log("After", tblContainer1);
+                // var currUserInfoName = document.getElementById("userInfoName");
+                // var currUserInfoOrigin = document.getElementById("userInfoOrigin");
+                // currUserInfoName.innerHTML = "Name:-";
+                // currUserInfoOrigin.innerHTML = "Country you arrived from:-";
+                resizeFrame(127);
+                makeWidgetRequiredOrNot();
+                JFCustomWidget.sendData(_data);
+            });
+
+            JFCustomWidget.subscribe('ready', function (data) {
+                var widget = new GetPrefilledURLWidget('Test01', data);
+                widget.init();
+            });
+
+            JFCustomWidget.subscribe("show", function (i) {
+                resizeFrame(127);
+            })
+        });
+
+    </script>
+    <div id="wrapper">
+        <div id="myDiv" class="input-group mb-3">
+            <!-- <div class="input-group-prepend">
+            <button id="getLinkButton" class="btn btn-success" type="button" onclick="getLinkStageOne()">
+                <i id="myLoadIcon" class=""></i>Search ID</button>
+        </div> -->
+            <input type="text" id="clientInfo" name="clientInfo" class="form-control" placeholder="" aria-label=""
+                aria-describedby="basic-addon1">
+            <button class="btn btn-success" type="button" onclick="getClientInfo()"><i id="myLoadIcon"
+                    class=""></i>Search ID</button>
+        </div>
+        <div id="table-container">
+        </div>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+    <link type="text/css" rel="stylesheet"
+        href="https://digiblu.jotform.com/themes/CSS/5e6b428acc8c4e222d1beb91.css?v=3.3.57758" />
+    <link type="text/css" rel="stylesheet"
+        href="https://digiblu.jotform.com/css/styles/payment/payment_styles.css?3.3.57758" />
+    <link type="text/css" rel="stylesheet"
+        href="https://digiblu.jotform.com/css/styles/payment/payment_feature.css?3.3.57758" />
+    <link type="text/css" rel="stylesheet"
+        href="https://digiblu.jotform.com/stylebuilder/static/form-common.css?v=3c1609c" />
+</head>
+
+<body>
+    <div id="recorder-container">
+        <h2>Upload or Record</h2>
+        <div id="button-group">
+            <button id="recButton" class="notRec"></button>
+            <span class="separator">/</span>
+            <button id="upload-btn" class="upload-btn">Upload Audio</button>
+            <input type="file" id="upload-file" accept="audio/*" style="display:none">
+        </div>
+        <p id="transcription-output">Transcription: <span id="transcribed-text"></span></p>
+    </div>
+
+    <style>
+       /* Center alignment for the recorder container */
+#recorder-container {
+    text-align: center;
+}
+
+/* Heading for upload or record */
+#recorder-container h2 {
+    font-size: 18px;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+/* Button group layout */
+#button-group {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* Style for the recording button */
+#recButton {
+    width: 35px;
+    height: 35px;
+    font-size: 0;
+    background-color: darkred;
+    border: 0;
+    border-radius: 50%;
+    outline: none;
+    cursor: pointer;
+}
+
+.notRec {
+    background-color: darkred;
+}
+
+.Rec {
+    animation-name: pulse;
+    animation-duration: 1.5s;
+    animation-iteration-count: infinite;
+    animation-timing-function: linear;
+}
+
+/* Pulsing animation for recording */
+@keyframes pulse {
+    0% {
+        box-shadow: 0px 0px 5px 0px rgba(173, 0, 0, .3);
+    }
+    65% {
+        box-shadow: 0px 0px 5px 13px rgba(173, 0, 0, .3);
+    }
+    90% {
+        box-shadow: 0px 0px 5px 13px rgba(173, 0, 0, 0);
+    }
+}
+
+/* Upload button styles */
+.upload-btn {
+    background-color: #007bff;
+    color: white;
+    padding: 8px 12px;
+    font-size: 14px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    outline: none;
+}
+
+.upload-btn:hover {
+    background-color: #0056b3;
+}
+
+/* Separator style */
+.separator {
+    font-size: 18px;
+    color: #666;
+}
+
+    </style>
+    <script>
+        "use strict";
+
+        var params;
+        var mediaRecorder;
+        var isRecording = false;
+
+        function toggleRecording() {
+            if (isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        }
+
+        // Step 1: Start Recording Speech
+        function startRecording() {
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(function (stream) {
+                    mediaRecorder = new MediaRecorder(stream);
+                    mediaRecorder.start();
+
+                    //document.getElementById('recording-status').textContent = "Recording";
+                    document.getElementById('recButton').classList.remove("notRec");
+                    document.getElementById('recButton').classList.add("Rec");
+                    isRecording = true;
+
+                    mediaRecorder.ondataavailable = function (event) {
+                        const audioBlob = event.data;
+                        const audioFile = new File([audioBlob], "recording.webm", { type: "audio/webm" });
+                        sendAudioToAPI(audioFile);
+                    };
+                })
+                .catch(function (err) {
+                    console.error('Error accessing microphone: ', err);
+                });
+        }
+
+        // Step 2: Stop Recording
+        function stopRecording() {
+            if (mediaRecorder && isRecording) {
+                mediaRecorder.stop();
+                //document.getElementById('recording-status').textContent = "Not Recording";
+                document.getElementById('recButton').classList.remove("Rec");
+                document.getElementById('recButton').classList.add("notRec");
+                isRecording = false;
+            }
+        }
+
+        document.getElementById('recButton').addEventListener('click', toggleRecording);
+        document.getElementById('recButton').classList.add("notRec");
+
+        // Handle File Upload
+        document.getElementById('upload-btn').addEventListener('click', function () {
+            document.getElementById('upload-file').click(); // Open file dialog
+        });
+
+        // When a file is selected, upload it
+        document.getElementById('upload-file').addEventListener('change', function () {
+            const file = this.files[0];
+            if (file) {
+                sendAudioToAPI(file); // Send the selected file
+            }
+        });
+
+        // Step 3: Sending Audio to Hugging Face API
+        function sendAudioToAPI(audioFile) {
+            const formData = new FormData();
+            formData.append('file', audioFile);
+            formData.append('questions', JSON.stringify(params.fieldMapping || {}));
+
+            const apiUrl = 'https://mjobe-document-vqa-v2.hf.space/transcribe_and_answer/';
+
+            fetch(apiUrl, {
+                method: 'POST',
+                body: formData,
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Server responded with status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const transcribedText = data.transcription;
+                    document.getElementById('transcribed-text').innerText = transcribedText;
+                    prefillFormFields(data);
+                })
+                .catch(error => {
+                    console.error('Error fetching transcription:', error);
+                });
+        }
+
+        // Step 4: Prefill form fields based on transcription
+        function prefillFormFields(apiResponse) {
+            const transcription = apiResponse.transcription;
+            const answers = apiResponse.answers;
+            document.getElementById('transcribed-text').innerText = transcription;
+
+            Object.keys(answers).forEach(fieldId => {
+                const fieldValue = answers[fieldId];
+                JFCustomWidget.setFieldsValueById([{
+                    id: fieldId,
+                    value: fieldValue
+                }]);
+            });
+
+            JFCustomWidget.sendData(transcription);
+        }
+
+        function resizeFrame() {
+            const currHeight = $("body").height();
+            JFCustomWidget.requestFrameResize({ width: 1000, height: currHeight });
+        }
+
+        JFCustomWidget.subscribe('populate', function (data) {
+            console.log("Populate Data:", data);
+        });
+
+        JFCustomWidget.subscribe('ready', function (data) {
+            params = JFCustomWidget.getWidgetSettings();
+        });
+
+        JFCustomWidget.subscribe('submit', function (data) {
+            console.log("Form submitted with:", data);
+        });
+
+    </script>
+</body>
+
+</html>

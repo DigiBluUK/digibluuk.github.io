@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script type="text/javascript">
+        (function () {
+            var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+            po.src = '//js.jotform.com/JotFormCustomWidget.min.js?onload=onLoadCallback';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+        })();
+    </script>
+    <style>
+    </style>
+</head>
+<style>
+</style>
+
+<body>
+    <span id="labelText"></span>
+    <div>
+        <canvas id="myChart"></canvas>
+    </div>
+    <canvas id="myChart" width="1000" height="700" aria-label="Hello World" role="img"></canvas>
+    <script>
+
+        console.log("JFCustomWidget: ", JFCustomWidget)
+        var chartData = [];
+        //subscrive to ready
+        JFCustomWidget.subscribe("ready", function (msg) {
+            console.log("ready message arrived from JotForm", msg);
+            var fields = ["data1", "data2", "data3", "data4", "data5", "data6", "data7"]
+            
+            JFCustomWidget.getFieldsValueByName(fields, function (res) {
+                console.log("res by Name=", res)
+                res.data.forEach(resItem => {
+                    chartData.push(parseFloat(resItem?.value) ?? 0)
+                    console.log(resItem.value);
+                });
+
+                // const labels = [
+                //     'January',
+                //     'February',
+                //     'March',
+                //     'April',
+                //     'May',
+                //     'June',
+                //     'July'
+                // ];
+
+                const data = {
+                    labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
+                    datasets: [{
+                        label: '2022',
+                        data: [...chartData],
+                        fill: false,
+                        borderColor: 'rgb(75, 192, 192)',
+                    }]
+                };
+
+                //config
+                const config = {
+                    type: 'line',
+                    data: data,
+                    options: {
+                        transitions: {
+                            show: {
+                                animations: {
+                                    x: {
+                                        from: 0
+                                    },
+                                    y: {
+                                        from: 0
+                                    }
+                                }
+                            },
+                            hide: {
+                                animations: {
+                                    x: {
+                                        to: 0
+                                    },
+                                    y: {
+                                        to: 0
+                                    }
+                                }
+                            }
+                        }
+                    }
+                };
+
+                //render the chart using our configuration:
+                const myChart = new Chart(
+                    document.getElementById('myChart'),
+                    config
+                );
+            });
+
+        });
+
+        //subscribe to submit
+        JFCustomWidget.subscribe("submit", function (msg) {
+            var data2 = {
+                value: "",
+                valid: true
+            }
+            console.log(data2)
+            JFCustomWidget.sendSubmit(data2);
+        });
+    </script>
+</body>
+
+</html>

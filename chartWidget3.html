@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROI Chart</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.2.0/dist/chart.min.js"></script>
+    <script type="text/javascript">
+        (function () {
+            var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+            po.src = '//js.jotform.com/JotFormCustomWidget.min.js?onload=onLoadCallback';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+        })();
+    </script>
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 10px;
+            background-color: #f9f9f9;
+            box-sizing: border-box;
+        }
+
+        #chart-container {
+            width: 100%;
+            max-width: 700px;
+            height: 350px;
+            margin: auto;
+            margin-top: -20px;
+            position: relative;
+            padding: 0 10px;
+            box-sizing: border-box;
+        }
+
+        #roiBarChart {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            body {
+                padding: 5px;
+            }
+            
+            #chart-container {
+                height: 300px;
+                margin-top: -10px;
+                padding: 0 5px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #chart-container {
+                height: 250px;
+                padding: 0;
+            }
+        }
+
+        @media (max-width: 320px) {
+            #chart-container {
+                height: 220px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="chart-container">
+        <canvas id="roiBarChart"></canvas>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('roiBarChart').getContext('2d');
+
+        const roiBarChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5'],
+                datasets: [
+                    {
+                        label: 'Current Spend',
+                        data: [0, 0, 0, 0, 0],
+                        backgroundColor: '#b4d3f8',
+                        borderColor: '#b4d3f8',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Potential Spend',
+                        data: [0, 0, 0, 0, 0],
+                        backgroundColor: '#0F5DBD',
+                        borderColor: '#0F5DBD',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: {
+                                size: function(context) {
+                                    return window.innerWidth < 480 ? 10 : 12;
+                                }
+                            },
+                            padding: window.innerWidth < 480 ? 10 : 20
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: '',
+                        font: {
+                            size: function(context) {
+                                return window.innerWidth < 480 ? 14 : 18;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: ''
+                        },
+                        ticks: {
+                            font: {
+                                size: function(context) {
+                                    return window.innerWidth < 480 ? 10 : 12;
+                                }
+                            }
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Amount (£)',
+                            font: {
+                                size: function(context) {
+                                    return window.innerWidth < 480 ? 10 : 12;
+                                }
+                            }
+                        },
+                        ticks: {
+                            font: {
+                                size: function(context) {
+                                    return window.innerWidth < 480 ? 10 : 12;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        console.log("JFCustomWidget: ", JFCustomWidget);
+
+        JFCustomWidget.subscribe('populate', fillConditionValue);
+
+        function fillConditionValue(data) {
+            console.log(data);
+
+            const parsedData = parseDataString(data.value);
+            console.log(parsedData);
+
+            roiBarChart.data.datasets[0].data = parsedData.Costs;
+            roiBarChart.data.datasets[1].data = parsedData.Savings;
+
+            if (parsedData.Years) {
+                roiBarChart.data.labels = parsedData.Years;
+            }
+
+            roiBarChart.update();
+
+            resizeFrame();
+        }
+
+        function parseDataString(dataString) {
+            const datasets = {};
+            const parts = dataString.split(';');
+            parts.forEach(part => {
+                const [key, values] = part.split(':');
+                if (key && values) {
+                    datasets[key.trim()] = values.split(',').map(Number);
+                }
+            });
+
+            return datasets;
+        }
+
+        function resizeFrame() {
+            const currHeight = $("#chart-container").height();
+            JFCustomWidget.requestFrameResize({ height: currHeight })
+        }
+
+        // Handle window resize for better responsiveness
+        window.addEventListener('resize', function() {
+            roiBarChart.resize();
+            resizeFrame();
+        });
+
+        JFCustomWidget.subscribe("ready", function (msg) {
+            console.log("Ready:", msg);
+            console.log("lib1:", JFCustomWidget);
+            console.log("lib2:", JFCustomWidgetUtils);
+        });
+
+        JFCustomWidget.subscribe("submit", function (msg) {
+            const imageData = roiBarChart.toBase64Image();
+            const data2 = {
+                valid: true,
+                value: JFCustomWidgetUtils.buildMetadata(
+                    'imagelinks',
+                    [
+                        {
+                            'name': "ROI Chart",
+                            'base64': imageData
+                        }
+                    ]
+                )
+            };
+            JFCustomWidget.sendSubmit(data2);
+        });
+    </script>
+</body>
+
+</html>

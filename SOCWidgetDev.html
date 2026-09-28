@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+    <link type="text/css" rel="stylesheet"
+        href="https://specialolympics.jotform.com/themes/CSS/5e6b428acc8c4e222d1beb91.css?v=3.3.40612&amp;themeRevisionID=5eb3b4ae85bd2e1e2966db96">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN"
+        crossorigin="anonymous"></script>
+    <script type="text/javascript">
+        (function () {
+            var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+            po.src = '//js.jotform.com/JotFormCustomWidget.min.js?onload=onLoadCallback';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+        })();
+    </script>
+</head>
+
+<body>
+    <style>
+        #myTable td {
+            padding: 0.25em;
+        }
+
+        #val {
+            display: block;
+            margin-top: 0.5em;
+        }
+
+        tr.disabled {
+            font-weight: 700;
+        }
+
+        td, tr{
+            border: 1px solid #dddddd; border-collapse: collapse; padding: 8px; text-align: left;
+        }
+    </style>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            console.log("document loaded");
+        });
+
+        $(window).on("load", function () {
+            console.log("window loaded");
+        });
+
+        //Global
+        function updateSubTotal() {
+            var widgetSettings1 = JFCustomWidget.getWidgetSettings();
+
+            if (widgetSettings1["Total Projected Expenses Field ID"] != "") {
+                var table = document.getElementById("myTable");
+                let subTotal = Array.from(table?.rows).slice(1)?.reduce((total, row) => {
+                    if (row?.cells[1]?.getElementsByTagName('input')[0]?.value !== "") {
+                        return total + parseFloat(row?.cells[1]?.getElementsByTagName('input')[0]?.value);
+                    }
+                    else {
+                        return total + 0;
+                    }
+                }, 0);
+                let subTotal2 = Array.from(table?.rows)?.slice(1)?.reduce((total, row) => {
+                    if (row?.cells[2]?.getElementsByTagName('input')[0]?.value !== "") {
+                        return total + parseFloat(row?.cells[2]?.getElementsByTagName('input')[0]?.value);
+                    }
+                    else {
+                        return total + 0;
+                    }
+                }, 0);
+                let subTotal3 = Array.from(table?.rows)?.slice(1)?.reduce((total, row) => {
+                    if (row?.cells[3]?.getElementsByTagName('input')[0]?.value !== "") {
+                        return total + parseFloat(row?.cells[3]?.getElementsByTagName('input')[0]?.value);
+                    }
+                    else {
+                        return total + 0;
+                    }
+                }, 0);
+                // document.getElementById("val").innerHTML = "SubTotal = $" + subTotal.toFixed(2);
+                // document.getElementById("val2").innerHTML = "SubTotal2 = $" + subTotal2.toFixed(2);
+                // document.getElementById("val3").innerHTML = "SubTotal3 = $" + subTotal3.toFixed(2);
+                subTotal = subTotal.toFixed(2).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                subTotal2 = subTotal2.toFixed(2).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                subTotal3 = subTotal3.toFixed(2).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+                JFCustomWidget.setFieldsValueById([{
+                    id: widgetSettings1["Total Projected Expenses Field ID"],
+                    value: "$" + subTotal
+                }]);
+                JFCustomWidget.setFieldsValueById([{
+                    id: widgetSettings1["Total Mid-year Expenses Field ID"],
+                    value: "$" + subTotal2
+                }]);
+                JFCustomWidget.setFieldsValueById([{
+                    id: widgetSettings1["Total Final Expenses Field ID"],
+                    value: "$" + subTotal3
+                }]);
+            }
+
+            var currValue = getData();
+            JFCustomWidget.sendSubmit({ valid: false, value: currValue });
+        }
+
+        function onClickRemove(deleteButton) {
+            let row = deleteButton.parentElement.parentElement;
+            row.parentNode.removeChild(row);
+            updateSubTotal(); // Call after delete
+            resizeFrame();
+        }
+
+        function resizeFrame() {
+            var currHeight = document.getElementById('myDiv').offsetHeight;
+            JFCustomWidget.requestFrameResize({ width: 1000, height: currHeight + 35 })
+        }
+
+        function addTableData(colSize, inputDisabled) {
+            var wSettings = JFCustomWidget.getWidgetSettings();
+
+            const getTypeFromSetting = wSettings["Columns"]?.split(/\r?\n/);
+
+            var str = "";
+            for (var i = 1; i < colSize; i++) {
+                if (!getTypeFromSetting[i].match(':')) {
+                    str += `<td class="form-matrix-values"><input type="number" class="form-textbox" size="5" style="width:100%; box-sizing:border-box; border: transparent;" value="0" min="0" aria-label="Cells Text Box"/>`
+                }
+                else {
+                    str += `<td class="form-matrix-values"><input type="textarea" class="form-textbox" size="80" style="width:100%; box-sizing:border-box; border: transparent;" value=" " aria-label="Cells Text Box"/>`
+                }
+            }
+            return str
+
+        }
+
+        function addBlankCells(blankColSize) {
+            //var wSettings = JFCustomWidget.getWidgetSettings();
+            //const getTypeFromSetting = wSettings["Columns"]?.split(/\r?\n/);
+
+            var str = "";
+            for (var i = 1; i < blankColSize; i++) {
+                str += `<td class="form-matrix-values"></td>`
+            }
+
+            return str
+        }
+
+        function addRow() {
+
+            var widgetSett = JFCustomWidget.getWidgetSettings();
+
+            const colLen = widgetSett["Columns"]?.split(/\r?\n/).length;
+
+            $("#myTable").append(`<tr class="form-matrix-tr form-matrix-value-tr"><td class="form-matrix-values"><input type="text" class="form-textbox" size="5" style="width:100%; box-sizing:border-box"; border: transparent; value=" " aria-label="Cells Text Box" />${addTableData(colLen, false)}<td style="border: 1px solid #c3cad8; border-collapse: collapse;"><button class="btn btn-danger" onClick="onClickRemove(this)">Remove</button></td></tr>`);
+            updateSubTotal();
+            resizeFrame();
+        }
+
+        function getData() {
+
+            $('input').each(function () {
+                var curInputValue = $(this).val()
+                $(this).attr('value', curInputValue);
+            });
+
+            myTable = document.getElementsByTagName("table")[0];
+            myClone = myTable.cloneNode(true);
+
+            var copyOfHTML = document.getElementById("myDiv").innerHTML;
+
+           var copyOfHTML = $(copyOfHTML).siblings().each(
+                function () {
+                    // if the td elements contain any input tag
+                    if ($(this).find('input').length) {
+                        console.log("THIS VALUE: ", this)
+                        // sets the text content of the tag equal to the value of the input
+                        $(this).text($(this).find('input').val());
+                    }
+                    else {
+                        // removes the text, appends an input and sets the value to the text-value
+                        var t = $(this).text();
+                        $(this).html($('<input />', { 'value': t }).val(t));
+                    }
+                });
+
+                console.log("copyOfHTML: ", copyOfHTML)
+
+            console.log("HTML: ", `<style> table{ max-width: 100%; min-width: 100%; table-layout: auto; text-align: center; border-collapse: collapse; border-radius: 4px; overflow: hidden; box-shadow: rgb(229, 230, 239) 0px 0px 0px 1px; word-break: break-word; hyphens: auto;} button{ display:none}</style>${document.getElementById("myDiv").innerHTML}`)
+
+            var widgetValue = JFCustomWidgetUtils.buildMetadata('htmltext', btoa(`<!DOCTYPE html> <html lang="en"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Document</title></head><body><style> #myTable td {padding: 0.25em; } td, tr {border: 1px solid #dddddd; border-collapse: collapse; padding: 8px; text-align: left;} </style> ${document.getElementById("myDiv").innerHTML}</html>`));
+            return widgetValue
+        }
+
+        $(function () {
+            function SOCWidget(containerId, formData) {
+                /**
+               * Exposed
+               */
+                this.init = init;
+
+                function init() {
+                    console.log(formData);
+
+                    console.log("SETTINGS: ", JFCustomWidget.getWidgetSettings());
+
+                    if (formData.value !== undefined && formData.value !== "") {
+
+                        var newDataObj = JSON.parse(formData.value)
+                        document.getElementById("myDiv").innerHTML = atob(newDataObj.widget_metadata?.value);
+
+                        // $('input').each(function () {
+                        //     var curInputValue = $(this).val()
+                        //     $(this).attr('text', curInputValue);
+                        // });
+
+                        resizeFrame();
+                    }
+                    else {
+                        buildHTML();
+                    }
+                }
+
+                function buildHTML() {
+                    var newCols = "";
+                    var newRows = "";
+                    var widgetSettings = JFCustomWidget.getWidgetSettings();
+
+                    widgetSettings["Columns"]
+                    widgetSettings["Rows"]
+
+                    const getRowsFromSetting = widgetSettings["Rows"]?.split(/\r?\n/);
+                    const getColsFromSetting = widgetSettings["Columns"]?.split(/\r?\n/);
+
+                    var numOfCol = getColsFromSetting?.length;
+
+                    getColsFromSetting?.forEach(function (tHeaders) {
+                        if (!tHeaders.match(':')) {
+                            newCols += `<th scope="col" class="form-matrix-headers form-matrix-column-headers form-matrix-column_1">${tHeaders}</th>`;
+                        } else {
+                            tHeaders = tHeaders.substring(0, tHeaders.indexOf(':'));
+                            newCols += `<th scope="col" class="form-matrix-headers form-matrix-column-headers form-matrix-column_1">${tHeaders}</th>`;
+                        }
+                    });
+
+                    getRowsFromSetting?.forEach(function (tRows) {
+                        if (!tRows.match(':')) {
+                            newRows += `<tr class="form-matrix-tr form-matrix-value-tr"><td scope="col" class="form-matrix-headers form-matrix-row-headers" style="text-indent: 1px; padding-left: 10px">${tRows}</td> ${addTableData(numOfCol, false)} </tr>`
+                        } else {
+                            tRows = tRows.substring(0, tRows.indexOf(':'));
+                            newRows += `<tr class="disabled"><td scope="col" class="form-matrix-headers form-matrix-row-headers" style="text-indent: 1px; padding-left: 10px">${tRows}</td> ${addBlankCells(numOfCol)}</tr>`
+                        }
+                        //jQuery('.ldrm tbody').append('<tr><td class="remove-row"><span class="btn">Remove</span></td><td class="rb-left">Test</td>' + (function() { var str = ''; for(var i=0; i < numOfCol; i++) { str += '<td>Test</td>'; } return str; })());
+                    });
+
+                    document.getElementById("myTable").innerHTML = `<tr class="form-matrix-tr form-matrix-value-tr">${newCols}</tr>${newRows}`;
+
+                    resizeFrame();
+                }
+            }
+
+            JFCustomWidget.subscribe('submit', function () {
+
+            });
+
+            JFCustomWidget.subscribe('ready', function (data) {
+                var widget = new SOCWidget('Test01', data);
+                widget.init();
+            });
+        });
+
+    </script>
+    <div id="myDiv" style="overflow: auto;" class="form-input-wide">
+        <table id="myTable" onchange="updateSubTotal()" cellpadding="4" cellspacing="0" class="form-matrix-table"
+            data-component="matrix">
+        </table>
+        <br>
+        <button class="btn btn-success" type="button" onclick="addRow()">Add Row</button>
+        <span id="val"></span>
+        <span id="val2"></span>
+        <span id="val3"></span>
+    </div>
+</body>
+
+</html>

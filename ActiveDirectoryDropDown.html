@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+    <link type="text/css" rel="stylesheet"
+        href="https://digiblu.jotform.com/themes/CSS/5e6b428acc8c4e222d1beb91.css?v=3.3.57758" />
+    <link type="text/css" rel="stylesheet"
+        href="https://digiblu.jotform.com/css/styles/payment/payment_styles.css?3.3.57758" />
+    <link type="text/css" rel="stylesheet"
+        href="https://digiblu.jotform.com/css/styles/payment/payment_feature.css?3.3.57758" />
+    <link type="text/css" rel="stylesheet"
+        href="https://digiblu.jotform.com/stylebuilder/static/form-common.css?v=3c1609c" />
+    <!-- Optional JavaScript -->
+    <script type="text/javascript">
+        (function () {
+            var po = document.createElement('script');
+            po.type = 'text/javascript';
+            po.async = true;
+            po.src = '//js.jotform.com/JotFormCustomWidget.min.js?onload=onLoadCallback';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(po, s);
+        })();
+    </script>
+</head>
+
+<style>
+    * {
+        margin: 0px;
+        padding: 0px;
+        border: 0px;
+        box-sizing: border-box;
+    }
+
+    /* body {
+        background: #f4f4f4;
+        font: 14px Tahoma, Geneva, sans-serif;
+        text-align: center;
+    } */
+
+    .loading-message {
+        color: #666;
+        margin-top: 10px;
+    }
+
+    .form-line {
+        padding: 0px;
+        margin: 0px;
+    }
+</style>
+
+<body>
+    <div class="signer-dropdown" id="signerDropdown">
+        <div role="main">
+            <ul>
+                <li class="form-line" data-type="control_dropdown" id="ADDropdown">
+                    <div id="ADDropdown" class="form-input-wide" data-layout="half">
+                        <select class="form-dropdown" id="input_ADDropdown" name="ADDropdown_typeA" style="width:100%"
+                            data-component="dropdown" aria-label="">
+                            <option value="">Please Select</option>
+                        </select>
+                        <p id="loadingMessage" class="loading-message form-sub-label">Please select a Job Title from the
+                            Job Title dropdown</p>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        "use strict";
+
+        var params;
+        var selectedLocation;
+
+        const signerDropdown = document.getElementById("signerDropdown");
+        const signerSelect = document.getElementById("input_ADDropdown");
+        const loadingMessage = document.getElementById("loadingMessage");
+
+        let signer1Value;
+
+        function showLoadingMessage() {
+            signerSelect.innerHTML = "";
+            const loadingOption = document.createElement("option");
+            loadingOption.value = "";
+            loadingOption.textContent = "Retrieving data...";
+            signerSelect.appendChild(loadingOption);
+            loadingMessage.textContent = "";
+        }
+
+        function showSuccessMessage() {
+            loadingMessage.textContent = "Data retrieved successfully!";
+        }
+
+        function updateSignerDropdown(emails) {
+            signerSelect.innerHTML = "";
+            const defaultOption = document.createElement("option");
+            defaultOption.value = "";
+            defaultOption.textContent = "Please Select";
+            signerSelect.appendChild(defaultOption);
+
+            const jobTitleGroup = document.createElement("optgroup");
+            jobTitleGroup.label = `Job Title Related Results:`;
+
+            const departmentGroup = document.createElement("optgroup");
+            departmentGroup.label = "Department Related Results:";
+
+            emails.forEach((email) => {
+                const option = document.createElement("option");
+                option.value = email.mail;
+                option.textContent = `${email.displayName} - ${email.jobTitle} - ${email.department}`;
+
+                if (email.jobTitle === selectedLocation) {
+                    jobTitleGroup.appendChild(option);
+                } else {
+                    departmentGroup.appendChild(option);
+                }
+            });
+
+            if (jobTitleGroup.children.length > 0) {
+                signerSelect.appendChild(jobTitleGroup);
+            }
+            if (departmentGroup.children.length > 0) {
+                signerSelect.appendChild(departmentGroup);
+            }
+
+            if (jobTitleGroup.children.length > 0) {
+                signerSelect.value = jobTitleGroup.children[0].value;
+            } else if (departmentGroup.children.length > 0) {
+                signerSelect.value = departmentGroup.children[0].value;
+            }
+
+            signerSelect.addEventListener("change", function () {
+                storeSelectedValue(signerSelect.value);
+                setEmailValueToField();
+            });
+        }
+
+        function storeSelectedValue(value) {
+            signer1Value = value;
+            console.log(`Updated signer value:`, value);
+        }
+
+        function setEmailValueToField() {
+            console.log("Email value: ", signer1Value);
+            console.log("Field Id: ", params.fieldToFill);
+
+            JFCustomWidget.setFieldsValueById([{
+                id: params.fieldToFill,
+                value: signer1Value
+            }]);
+
+            JFCustomWidget.sendData(signer1Value);
+        }
+
+        function fetchSigners(location) {
+            showLoadingMessage();
+
+            const apiUrl = `jobTitle=${location}`;
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    const emails = data || [];
+                    if (emails.length > 0) {
+                        JFCustomWidget.sendData(emails[0].mail);
+                        signerDropdown.style.display = "block";
+                        updateSignerDropdown(emails);
+                        storeSelectedValue(emails[0].mail);
+                        setEmailValueToField();
+                        showSuccessMessage();
+                    } else {
+                        loadingMessage.textContent = "No data found!";
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching signers:', error);
+                    loadingMessage.textContent = "Error retrieving data!";
+                });
+        }
+
+        function fillConditionValue(data) {
+            console.log("Fill Data", data);
+
+            selectedLocation = data.value || "";
+            if (selectedLocation) {
+                fetchSigners(selectedLocation);
+            }
+        }
+
+        function resizeFrame() {
+            const currHeight = $("body").height();
+            const currWidth = $("body").width();
+            JFCustomWidget.requestFrameResize({ width: currWidth, height: currHeight })
+        }
+
+        JFCustomWidget.subscribe('populate', fillConditionValue);
+
+        JFCustomWidget.subscribe('ready', function (data) {
+            resizeFrame();
+            console.log("Data Ready", data);
+            console.log("JFCustomWidget", JFCustomWidget);
+            console.log("JFCustomWidgetUtils", JFCustomWidgetUtils);
+            params = JFCustomWidget.getWidgetSettings();
+        });
+
+        JFCustomWidget.subscribe('submit', function (data) {
+            JFCustomWidget.sendData(signer1Value);
+            console.log("Form submitted with:", data);
+        });
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script type="text/javascript">
+        (function () {
+            var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+            po.src = '//js.jotform.com/JotFormCustomWidget.min.js?onload=onLoadCallback';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+        })();
+    </script>
+</head>
+<style>
+</style>
+
+<body>
+    <span id="labelText"></span>
+    <h1>Loading.....</h1>
+    <script type="text/javascript">
+        setTimeout(function () {
+            window.top.location.href = "https://nwu.jotform.com/220324795702959";
+        }, 40000);
+
+        var valid = "false";
+        var value;
+        var jotFormStudentName;
+        var jotFormDisplayName;
+        var callFinished = false;
+
+        //determining valid is important
+        function callNSFASCheck(studentId, displayName) {
+            if (callFinished === false) {
+                console.log("https://mwr.nwu.ac.za/msmigrate/migrate/othercheck?nwunumber=" + studentId + "&displayname=" + displayName)
+                jQuery.ajax({
+                    //url: "https://mwr.nwu.ac.za/msmigrate/migrate/othercheck?nwunumber=10600485&displayname=WERQ",
+                    url: "https://mwr.nwu.ac.za/msmigrate/migrate/othercheck?nwunumber=" + studentId + "&displayname=" + displayName,
+                    method: "GET",
+                    async: false,
+                    timeout: setTimeout,
+                    success: function (response) {
+                        console.log(response);
+                        //add result.info to array [1] and return it
+                        if (response.result === "YES" && response.errorcode === "Success") {
+                            console.log("Pass");
+                            callResidentPlacement(studentId, displayName)
+                        }
+                        else {
+                            console.log("Fail");
+                            valid = true;
+                            value = "Not a valid student";
+                            callFinished = true
+                            return
+                        }
+                    },
+                    error: function (response) {
+                        console.log(response);
+                        valid = true;
+                        value = "NSFAS Check failed";
+                        callFinished = true;
+                        return
+                    }
+                })
+            }
+        }
+
+        function callResidentPlacement(studentId, displayName) {
+            console.log("https://mwr.nwu.ac.za/msmigrate/migrate/placecheck?nwunumber=" + studentId + "&displayname=" + displayName)
+            jQuery.ajax({
+                //url: "https://mwr.nwu.ac.za/msmigrate/migrate/placecheck?nwunumber=10600485&displayname=WERQ",
+                url: "https://mwr.nwu.ac.za/msmigrate/migrate/placecheck?nwunumber=" + studentId + "&displayname=" + displayName,
+                method: "GET",
+                async: false,
+                timeout: setTimeout,
+                success: function (response) {
+                    console.log(response);
+                    if (response.result === "NOTPLACED" && response.errorcode === "Success") {
+                        console.log("Pass");
+                        valid = true;
+                        value = "Valid student and all checks passed";
+                        callFinished = true;
+                        return
+                    }
+                    else {
+                        console.log("Fail");
+                        valid = true;
+                        value = "Valid student but failed Resident Placement check";
+                        callFinished = true;
+                        return
+                    }
+                },
+                error: function (response) {
+                    console.log(response);
+                    valid = true;
+                    value = "Resident Placement Check failed";
+                    callFinished = true;
+                    return
+                }
+            })
+        }
+
+        function fillConditionValue(data) {
+            var inputValue = data.value || '';
+            //input.val(inputValue.split(","));
+            inputValue = inputValue.split(",")
+            JFCustomWidget.hideWidgetError();
+            // console.log(inputValue[0])
+            // console.log(inputValue[1])
+            jotFormDisplayName = JFCustomWidget.getWidgetSetting("displayName");
+
+            callNSFASCheck(inputValue[0], jotFormDisplayName);
+
+            var data = {
+                value: value,
+                valid: valid
+            }
+            //console.log(data.value)
+            JFCustomWidget.sendData(data);
+        }
+
+        //subscrive to ready
+        JFCustomWidget.subscribe("ready", function (msg) {
+            console.log("ready message arrived from JotForm", msg);
+            //var fields = ['studentNumber', 'displayName']; // you can add more fields using Field Details Unique Name
+            // get values from the necessary fields
+            // JFCustomWidget.getFieldsValueByName(fields, function (res) {
+            //     var dataFromFields = res.data;
+            //     userStudentNumber = dataFromFields[0].value;
+            //     userDisplayName = dataFromFields[1].value;
+
+            //     if (userStudentNumber != undefined && userDisplayName != undefined) {
+            //         console.log('The value of the Student Number field:', userStudentNumber);
+            //         console.log('The value of the Display Name field:', userDisplayName);
+            //         jotFormStudentName = userStudentNumber
+            //         //jotFormDisplayName = userDisplayName
+            //         // var jotFormStudentName = JFCustomWidget.getWidgetSetting("studentNumber");
+            //         jotFormDisplayName = JFCustomWidget.getWidgetSetting("displayName");
+
+            //     }
+            //     else {
+            //         console.log("Could not retrieve values from fields")
+            //         valid = false;
+            //         value = "Valid student but failed Resident Placement check";
+
+            //         var data = {
+            //             value: value,
+            //             valid: valid
+            //         }
+            //         console.log(data.value)
+            //         JFCustomWidget.sendData(data);
+            //     }
+            // });
+            //subscribe to submit
+            JFCustomWidget.subscribe("submit", function (msg) {
+
+                // console.log(jotFormStudentName)
+                // console.log(jotFormDisplayName)
+            });
+
+            JFCustomWidget.subscribe('populate', fillConditionValue);
+
+        });
+    </script>
+</body>
+
+</html>

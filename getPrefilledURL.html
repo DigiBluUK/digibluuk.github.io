@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN"
+        crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script type="text/javascript">
+        (function () {
+            var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+            po.src = '//js.jotform.com/JotFormCustomWidget.min.js?onload=onLoadCallback';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+        })();
+    </script>
+</head>
+
+<body>
+    <script type="text/javascript">
+        var iqxNum = "";
+        var candEmail = "";
+        var clipText = "";
+
+        // Copies a string to the clipboard. Must be called from within an
+        // event handler such as click. May return false if it failed, but
+        // this is not always possible. Browser support for Chrome 43+,
+        // Firefox 42+, Safari 10+, Edge and Internet Explorer 10+.
+        // Internet Explorer: The clipboard feature may be disabled by
+        // an administrator. By default a prompt is shown the first
+        // time the clipboard is used (per session).
+        function copyToClipboard() {
+            var text = document.getElementById('canFormLink').value;
+            if (window.clipboardData && window.clipboardData.setData) {
+                // Internet Explorer-specific code path to prevent inputArea being shown while dialog is visible.
+                return window.clipboardData.setData("Text", text);
+            }
+            else if (document.queryCommandSupported && document.queryCommandSupported("copy")) {
+                var inputArea = document.createElement("textarea");
+                inputArea.textContent = text;
+                inputArea.style.position = "fixed";  // Prevent scrolling to bottom of page in Microsoft Edge.
+                document.body.appendChild(inputArea);
+                inputArea.select();
+                try {
+                    return document.execCommand("copy");  // Security exception may be thrown by some browsers.
+                }
+                catch (ex) {
+                    console.warn("Copy to clipboard failed.", ex);
+                    return prompt("Copy to clipboard: Ctrl+C, Enter", text);
+                }
+                finally {
+                    document.body.removeChild(inputArea);
+                }
+            }
+        }
+
+        function getLinkStageTwo(submissionId) {
+            var params = JFCustomWidget.getWidgetSettings();
+            console.log(`https://acaciumgroup.jotform.com/API/sheets/221914243957359/submission/${submissionId}/thread?apiKey=${params["apiKey"]}`)
+            jQuery.ajax({
+                url: `https://acaciumgroup.jotform.com/API/sheets/221914243957359/submission/${submissionId}/thread?apiKey=${params["apiKey"]}`,
+                method: "GET",
+                crossDomain: true,
+                dataType: 'jsonp',
+                // data: {
+                //     "apiKey": params["apiKey"]
+                // },
+                // timeout: 10000,
+                success: function (responseData, textStatus, jqXHR) {
+                    console.log("success: ", responseData);
+                    for (let i = 0; i < responseData.content.length; i++) {
+                        if (responseData.content[i].actionDetails.to === candEmail) {
+                            if (responseData.content[i].actionDetails.subject === params["emailSubject"]) {
+                                console.log("FORM LINK: ", responseData.content[i].actionDetails.body)
+                                var extractedLinkFromBody = responseData.content[i].actionDetails.body.match(/"https:(.*?)"/g);
+                                const newString = String(extractedLinkFromBody).replace(/['"]+/g, '').replace(/&amp;/g, '&');
+                                console.log("NEW URL: ", newString);
+                                document.getElementById('canFormLink').value = newString;
+                                clipText = newString;
+                            }
+                        }
+                    }
+                    // document.getElementById("getLinkButton").textContent = "Get Link Again";
+                    document.getElementById("myLoadIcon").classList.remove("fa", "fa-spinner", "fa-spin");
+
+                    return
+                },
+                error: function (responseData, textStatus, jqXHR) {
+                    console.log("error: ", responseData);
+                    // document.getElementById("getLinkButton").textContent = "Retry";
+                    document.getElementById('canFormLink').value = "Failed Stage 2";
+                    document.getElementById("myLoadIcon").classList.remove("fa", "fa-spinner", "fa-spin");
+                    return
+                }
+            })
+        }
+
+        function getLinkStageOne() {
+            // document.getElementById("getLinkButton").textContent = "Getting Link....";
+            document.getElementById("myLoadIcon").classList.add("fa", "fa-spinner", "fa-spin");
+
+            console.log("HERE");
+            console.log("IQX NUM: ", iqxNum);
+            console.log("CANDEMAIL: ", candEmail);
+            var params2 = JFCustomWidget.getWidgetSettings();
+            if (iqxNum === "" || candEmail === "") {
+                JFCustomWidget.getFieldsValueByName(["iqxReference", "email"], function (res) {
+                    console.log("HERE 1.1")
+                    iqxNum = res.data[0].value;
+                    candEmail = res.data[1].value;
+
+                    console.log(`https://acaciumgroup.jotform.com//server.php?action=getExtGridSubmissions&formID=221914243957359&listID=231093864225052&includeSheetRows=true&excludeArchivedRows=true&startDate=&endDate=&start=0&limit=1000&sort=id&dir=DESC&_dc=1682001053683&apiKey=${params2["apiKey"]}`)
+                    jQuery.ajax({
+                        url: `https://acaciumgroup.jotform.com//server.php?action=getExtGridSubmissions&formID=221914243957359&listID=231093864225052&includeSheetRows=true&excludeArchivedRows=true&startDate=&endDate=&start=0&limit=1000&sort=id&dir=DESC&_dc=1682001053683&apiKey=${params2["apiKey"]}`,
+                        method: "GET",
+                        crossDomain: true,
+                        dataType: 'jsonp',
+                        // data: {
+                        //     "apiKey": params["apiKey"]
+                        // },
+                        // timeout: 10000,
+                        success: function (responseData, textStatus, jqXHR) {
+                            console.log("success: ", responseData);
+                            for (let j = 0; j < responseData.data.length; j++) {
+                                if (responseData.data[j]["11"] === iqxNum) {
+                                    console.log("SUBID: ", responseData.data[j].id)
+                                    getLinkStageTwo(responseData.data[j].id, responseData.data[j]["6"]);
+                                }
+                            }
+                            return
+                        },
+                        error: function (responseData, textStatus, jqXHR) {
+                            console.log("error: ", responseData);
+                            // document.getElementById("getLinkButton").textContent = "Retry";
+                            document.getElementById('canFormLink').value = "Failed Stage 1";
+                            document.getElementById("myLoadIcon").classList.remove("fa", "fa-spinner", "fa-spin");
+                            return
+                        }
+                    })
+
+                    JFCustomWidget.sendSubmit({ valid: false, value: `Please double click this cell to open widget. Email:${candEmail} IQX Number:${iqxNum} ` });
+                })
+            }
+            else {
+                console.log("HERE 1.2")
+                console.log(`https://acaciumgroup.jotform.com//server.php?action=getExtGridSubmissions&formID=221914243957359&listID=231093864225052&includeSheetRows=true&excludeArchivedRows=true&startDate=&endDate=&start=0&limit=1000&sort=id&dir=DESC&_dc=1682001053683&apiKey=${params2["apiKey"]}`)
+                jQuery.ajax({
+                    url: `https://acaciumgroup.jotform.com//server.php?action=getExtGridSubmissions&formID=221914243957359&listID=231093864225052&includeSheetRows=true&excludeArchivedRows=true&startDate=&endDate=&start=0&limit=1000&sort=id&dir=DESC&_dc=1682001053683&apiKey=${params2["apiKey"]}`,
+                    method: "GET",
+                    crossDomain: true,
+                    dataType: 'jsonp',
+                    // data: {
+                    //     "apiKey": params["apiKey"]
+                    // },
+                    // timeout: 10000,
+                    success: function (responseData, textStatus, jqXHR) {
+                        console.log("success: ", responseData);
+                        for (let j = 0; j < responseData.data.length; j++) {
+                            if (responseData.data[j]["11"] === iqxNum) {
+                                console.log("SUBID: ", responseData.data[j].id)
+                                getLinkStageTwo(responseData.data[j].id, responseData.data[j]["6"]);
+                            }
+                        }
+                        return
+                    },
+                    error: function (responseData, textStatus, jqXHR) {
+                        console.log("error: ", responseData);
+                        // document.getElementById("getLinkButton").textContent = "Retry";
+                        document.getElementById('canFormLink').value = "Failed Stage 1";
+                        document.getElementById("myLoadIcon").classList.remove("fa", "fa-spinner", "fa-spin");
+                        return
+                    }
+                })
+            }
+        }
+
+        $(function () {
+            function GetPrefilledURLWidget(containerId, formData) {
+                /**
+               * Exposed
+               */
+                this.init = init;
+
+                function init() {
+                    console.log(formData);
+                    console.log(JFCustomWidgetUtils)
+                    console.log(JFCustomWidget)
+
+                    console.log("getAllQueryString", JFCustomWidget.getAllQueryString())
+                    console.log("getEnterprise", JFCustomWidget.getEnterprise())
+                    console.log("getParentOrigin", JFCustomWidget.getParentOrigin())
+
+                    if (formData.value === "" || formData.value === undefined) {
+                        var params3 = JFCustomWidget.getWidgetSettings();
+                        JFCustomWidget.getFieldsValueByName(["iqxReference", "email"], function (res) {
+                            console.log("HERE 2")
+                            iqxNum = res.data[0].value;
+                            candEmail = res.data[1].value;
+
+                            JFCustomWidget.sendSubmit({ valid: false, value: `Please double click this cell to open widget. Email:${candEmail} IQX Number:${iqxNum} ` });
+                        })
+                    }
+                    else {
+                        try {
+                            var newformData = formData.value;
+                            iqxNum = newformData.match(/IQX Number:([^:\s]+)/g)[0].replace(/IQX Number:/g, '');
+                            candEmail = newformData.match(/Email:([^:\s]+)/g)[0].replace(/Email:/g, '');
+
+                            console.log("IQX NUM: ", iqxNum);
+                            console.log("CANDEMAIL: ", candEmail);
+                        } catch (error) {
+                            console.log("ERROR: ", error);
+                        }
+                    }
+                }
+            }
+
+            JFCustomWidget.subscribe('submit', function () {
+                JFCustomWidget.getFieldsValueByName(["iqxReference", "email"], function (res) {
+                    console.log("HERE 2")
+                    iqxNum = res.data[0].value;
+                    candEmail = res.data[1].value;
+
+                    JFCustomWidget.sendSubmit({ valid: false, value: `Please double click this cell to open widget. Email:${candEmail} IQX Number:${iqxNum} ` });
+                })
+            });
+
+            JFCustomWidget.subscribe('ready', function (data) {
+                var widget = new GetPrefilledURLWidget('Test01', data);
+                widget.init();
+            });
+        });
+
+    </script>
+    <div id="myDiv" class="input-group mb-3">
+        <div class="input-group-prepend">
+            <button id="getLinkButton" class="btn btn-success" type="button" onclick="getLinkStageOne()">
+                <i id="myLoadIcon" class=""></i> Get Link</button>
+        </div>
+        <input type="text" id="canFormLink" name="canFormLink" class="form-control" placeholder="" aria-label=""
+            aria-describedby="basic-addon1">
+        <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard()">Copy</button>
+    </div>
+</body>
+
+</html>

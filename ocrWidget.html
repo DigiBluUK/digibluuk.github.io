@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
+    <script src='https://unpkg.com/tesseract.js@v2.1.0/dist/tesseract.min.js'></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/2.1.5/tesseract.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/2.1.5/worker.min.js"></script>
+    <script type="text/javascript">
+        (function () {
+            var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+            po.src = '//js.jotform.com/JotFormCustomWidget.min.js?onload=onLoadCallback';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+        })();
+    </script>
+</head>
+<style>
+</style>
+
+<body>
+    <span id="labelText"></span>
+    <input type="file" id="input">
+    <button id="readButton" onclick="readImage()">Read</button>
+    <p id="imageResult"></p>
+    <progress id="progressbar" min="0" max="1" value="0" />
+    <script type="text/javascript">
+
+        //Global values
+        var valid = true;
+        var value;
+        var jotData;
+        var contentArea = document.getElementById('imageResult');
+
+        const fileInput = document.getElementById('input');
+        fileInput.onchange = () => {
+            const selectedFile = fileInput.files[0];
+            console.log(selectedFile);
+        }
+
+        /**
+        * This is a function that checks if the image uploaded is an jpeg or png, if true it sends it to be read and sends the results to jotform and returns. if false it prints a warning message and returns
+        * @param {void} doesn't take a parameter
+        * @returns {void} doesn't return anything
+        */
+        function readImage() {
+            const currentSelectedFile = fileInput.files[0];
+            console.log(currentSelectedFile);
+            if (currentSelectedFile === null && currentSelectedFile === undefined) { //may not be needed due to second guard statement
+                contentArea.innerHTML = "Unable to run no file found";
+                console.log("Unable to run no file found");
+                return
+            }
+            if (currentSelectedFile?.type !== "image/jpeg" && currentSelectedFile?.type !== "image/png") {
+                contentArea.innerHTML = "Unable to run, not an image file. Only JPEGs and PNGs";
+                console.log("Unable to run, not an image file. Only JPEGs and PNGs");
+                return
+            }
+            console.log("Run Tesseract");
+
+            Tesseract.recognize(
+                currentSelectedFile,
+                'eng', { logger: m => { console.log(m); document.getElementById('progressbar').value = m.progress; } })
+                .then(({ data: { text } }) => {
+                    contentArea.innerHTML = "Done :)";
+
+                    var data = {
+                        value: text,
+                        valid: valid
+                    }
+                    JFCustomWidget.sendData(data);
+                    console.log(text);
+                })
+                .catch(function (err) {
+                    contentArea.innerHTML = "Failed :(";
+                    console.error(err);
+                });
+            return
+        }
+
+        //subscrive to ready
+        JFCustomWidget.subscribe("ready", function (msg) {
+            console.log("ready message arrived from JotForm", msg);
+            //subscribe to submit
+            JFCustomWidget.subscribe("submit", function (msg) {
+                var data2 = {
+                    value: "",
+                    valid: true
+                }
+                console.log(data2)
+                JFCustomWidget.sendSubmit(data2);
+            });
+        });
+
+    </script>
+</body>
+
+</html>

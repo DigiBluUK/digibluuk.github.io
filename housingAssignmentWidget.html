@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN"
+        crossorigin="anonymous"></script>
+    <script type="text/javascript">
+        (function () {
+            var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+            po.src = '//js.jotform.com/JotFormCustomWidget.min.js?onload=onLoadCallback';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+        })();
+    </script>
+</head>
+
+<body>
+    <style>
+        /* make the table a 100% wide by default */
+        table {
+            width: 100%;
+        }
+
+        /* if the browser window is at least 800px-s wide: */
+        @media screen and (min-width: 800px) {
+            table {
+                width: 90%;
+            }
+        }
+
+        /* if the browser window is at least 1000px-s wide: */
+        @media screen and (min-width: 1000px) {
+            table {
+                width: 80%;
+            }
+        }
+    </style>
+    <script type="text/javascript">
+        var currTaskId;
+        var dataToReturn = { value: "", valid: false, sizeOfHouseHold: "" }
+        var currReqOcc;
+
+        function getFormValues() {
+            //var currFormValues;
+            JFCustomWidget.getFieldsValueById(["3", "8", "5", "6"], function (res) {
+                console.log("VALUE 1: ", res.data[0].value);
+                console.log("VALUE 2: ", res.data[1].value);
+                console.log("VALUE 3: ", res.data[2].value);
+                console.log("VALUE 4: ", res.data[3].value);
+                getHousingInfo(res.data);
+                return
+            });
+        }
+
+        function getHousingInfo(fieldValues) {
+            var params = JFCustomWidget.getWidgetSettings();
+            console.log("REQ: ", fieldValues)
+            console.log(`https://innovativebc.jotform.com/API/form/230735264344050/submissions?apiKey=${params["apiKey"]}`)
+            jQuery.ajax({
+                url: `https://innovativebc.jotform.com/API/form/230735264344050/submissions?apiKey=${params["apiKey"]}`,
+                method: "GET",
+                crossDomain: true,
+                dataType: 'jsonp',
+                // data: {
+                //     "apiKey": params["apiKey"]
+                // },
+                // timeout: 10000,
+                success: function (responseData, textStatus, jqXHR) {
+                    console.log("RES: ", responseData);
+                    console.log("RES: ", responseData.content[0].answers["9"].answer);
+                    console.log("RES: ", responseData.content[1].answers["9"].answer);
+                    checkSuitability(responseData, fieldValues)
+                    return
+                },
+                error: function (responseData, textStatus, jqXHR) {
+                    console.log(responseData);
+                    return
+                }
+            })
+        }
+
+        function checkSuitability(housing, req) {
+            $('#emptbl tr:not(:first)').remove();
+            console.log("REQ V1: ", req[0]);
+            console.log("REQ V2: ", req[1]);
+            console.log("REQ V3: ", req[2]);
+            console.log("REQ V4: ", req[3]);
+
+            var guestId = req[0].value;
+            var householdSize = req[1].value;
+            var hasPets = req[2].value;
+            var accReq = req[3].value;
+
+            for (let i = 0; i < housing.content.length; i++) {
+                if (housing.content[i].answers["9"].answer === "Available") {
+                    console.log("Is Available");
+                    console.log("TYPEOF1: ", typeof housing.content[i].answers["8"].answer);
+                    console.log("TYPEOF1: ", typeof householdSize);
+                    var currAva = Number(housing.content[i].answers["7"].answer) - Number(housing.content[i].answers["8"].answer)
+
+                    console.log("CURR AVA: ", currAva)
+                    //maxOcc - currOcc = currAva
+                    //houseHoldSize <= currAva
+
+                    if (currAva >= Number(householdSize)) {
+                        if (housing.content[i].answers["10"].answer === hasPets || hasPets === "No") {
+                            console.log("Is Pet Friendly");
+                            if (housing.content[i].answers["11"].answer === accReq || accReq === "No") {
+                                console.log("Has ADA Accessible?");
+                                var roomNum = housing.content[i].answers["3"].answer;
+                                var categ = housing.content[i].answers["6"].answer;
+                                var maximumOcc = housing.content[i].answers["7"].answer;
+                                var currentOcc = housing.content[i].answers["8"].answer;
+                                var subId = housing.content[i].id;
+                                console.log("SUBID: ", subId)
+                                console.log("SUBID: ", housing.content[i])
+
+                                addRow(roomNum, categ, maximumOcc, currentOcc, subId, Number(housing.content[i].answers["8"].answer) + Number(householdSize))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        function addRow(roomNumber, category, maximumOccupancy, currentOccupancy, submissId, hosHoldSize) {
+            var table = document.getElementById("emptbl");
+            // GET TOTAL NUMBER OF ROWS 
+            var x = table.rows.length;
+            var id = "tbl" + x;
+            var row = table.insertRow(x);
+            row.id = id;
+            row.className = submissId
+            var roomNumberCell = row.insertCell(0);
+            var categoryCell = row.insertCell(1);
+            var maximumOccupancyCell = row.insertCell(2);
+            var currentOccupancyCell = row.insertCell(3);
+            var selectCell = row.insertCell(4);
+
+            roomNumberCell.innerHTML = `<input type="text" name="roomNumber[]" value="${roomNumber}" id="roomNumber${x}" readOnly="true" />`;
+            categoryCell.innerHTML = `<input type="text" name="category[]" value="${category}" id="category${x}" readOnly="true" />`;
+            maximumOccupancyCell.innerHTML = `<input type="text" name="maximumOccupancy[]" value="${maximumOccupancy}" id="maximumOccupancy${x}" readOnly="true" />`;
+            currentOccupancyCell.innerHTML = `<input type="text" name="currentOccupancy[]" value="${currentOccupancy}" id="currentOccupancy${x}" readOnly="true" size="10"/>`;
+            selectCell.innerHTML = `<button type="button" id="${submissId}" value="" onclick="selectedHousing(${x}, ${hosHoldSize})">Select</>`;
+        }
+
+        function selectedHousing(rowId, currHouseHoldSize) {
+            // Get the row id where the cell exists
+            //var rowId = this.parentNode.rowIndex;
+
+            var table3 = document.getElementById("emptbl");
+
+
+            var rowsNotSelected = table3.getElementsByTagName('tr');
+            for (var row = 0; row < rowsNotSelected.length; row++) {
+                rowsNotSelected[row].style.backgroundColor = "";
+                //rowsNotSelected[row].classList.remove('selected');
+            }
+            var rowSelected = table3.getElementsByTagName('tr')[rowId];
+            rowSelected.style.backgroundColor = "red";
+            //rowSelected.className += " selected";
+
+            console.log("CLASSNAME: ", rowSelected.className)
+
+            dataToReturn.value = rowSelected.className;
+            dataToReturn.sizeOfHouseHold = currHouseHoldSize;
+        }
+
+        function updateDataBase(submissionId, houseHold) {
+            var params = JFCustomWidget.getWidgetSettings();
+            console.log(`https://innovativebc.jotform.com/API/submission/${submissionId}?apiKey=${params["apiKey"]}&submission[9]=Occupied`)
+            jQuery.ajax({
+                url: `https://innovativebc.jotform.com/API/submission/${submissionId}?apiKey=${params["apiKey"]}&submission[9]=Occupied&submission[8]=${houseHold}`,
+                method: "POST",
+                crossDomain: true,
+                dataType: 'jsonp',
+                // data: {
+                //     "submission[9]": "Occupied"
+                // },
+                // timeout: 10000,
+                success: function (responseData, textStatus, jqXHR) {
+                    console.log(responseData);
+                    return
+                },
+                error: function (responseData, textStatus, jqXHR) {
+                    console.log(responseData);
+                    return
+                }
+            })
+
+        }
+
+        $(function () {
+            function HousingAssignment(containerId, formData) {
+
+                /**
+               * Exposed
+               */
+                this.init = init;
+
+                function init() {
+                    console.log(formData)
+
+                    // JFCustomWidget.getFieldsValueByName(["originalSubmission"], function (res) {
+                    //     console.log("originalSubmission = ", res.data[0].value)
+                    //     originalSubmissionId = res.data[0].value;
+                    // });
+                }
+            }
+
+            JFCustomWidget.subscribe('submit', function () {
+                console.log("ID: ", dataToReturn.value)
+                updateDataBase(dataToReturn.value, dataToReturn.sizeOfHouseHold)
+                // send the data
+                JFCustomWidget.sendSubmit(dataToReturn);
+            });
+
+            JFCustomWidget.subscribe('ready', function (data) {
+                var widget = new HousingAssignment('Test01', data);
+                widget.init();
+            });
+        });
+
+    </script>
+
+    <br><button type="button" onclick="getFormValues()" class="btn btn-primary">Search For Room
+        Availability</button>
+    <br>
+    <br>
+    <p>Please select a Housing Assignment from the following list</p>
+
+    <h2>Housing Assignment Options</h2>
+    <div style="overflow-x:auto;">
+        <table id="emptbl" class="emptbl" style="overflow: auto; width: 100%; table-layout: fixed;">
+            <tbody>
+                <tr>
+                    <th>Room Number</th>
+                    <th>Category</th>
+                    <th>Maximum Occupancy</th>
+                    <th>Current Occupancy</th>
+                    <th>Selection</th>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</body>
+
+</html>

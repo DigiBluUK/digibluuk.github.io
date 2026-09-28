@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <!-- <script type="text/javascript">
+        (function () {
+            var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+            po.src = '//js.jotform.com/JotFormCustomWidget.min.js?onload=onLoadCallback';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+        })();
+    </script> -->
+</head>
+<style>
+</style>
+
+<body>
+    <span id="labelText"></span>
+    <button id="readButton" onclick="callBot()">Read</button>
+    <script type="text/javascript">
+
+        var valid = true;
+        var value;
+        var jotFormStudentName;
+        var jotFormDisplayName;
+        var callFinished = false;
+        var soapRequest = `<soapenv:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:urn="urn:blueprism:webservice:testapi1">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <urn:TestAPI1 soapenv:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+         <A xsi:type="xsd:decimal">`+ 100 + `</A>
+         <B xsi:type="xsd:decimal">`+ 200 + `</B>
+      </urn:TestAPI1>
+   </soapenv:Body>
+</soapenv:Envelope>`
+
+        //determining valid is important
+        function callBot() {
+            if (callFinished === false) {
+                jQuery.ajax({
+                    url: "http://myEndPoint.com",
+                    method: "POST",
+                    timeout: 60000,
+                    contentType: "text/xml",
+                    dataType: "xml",
+                    headers: {
+                        "Authorization": "Basic " + btoa("admin" + ":" + "admin")
+                    },
+                    data: soapRequest,
+                    success: function (response) {
+                         console.log(response);
+                        // //add result.info to array [1] and return it
+                        // if (response.result === "YES" && response.errorcode === "Success") {
+                        //     console.log("Pass");
+                        //     callResidentPlacement(studentId, displayName)
+                        // }
+                        // else {
+                        //     console.log("Fail");
+                        //     valid = true;
+                        //     value = "Not a valid student";
+                        //     callFinished = true;
+                        //     return
+                        // }
+                        return
+                    },
+                    error: function (response) {
+                        console.log(response);
+                        // valid = true;
+                        // value = "NSFAS Check failed";
+                        // callFinished = true;
+                        return
+                    }
+                })
+            }
+        }
+
+        function fillConditionValue(data) {
+            var inputValue = data.value || '';
+            //input.val(inputValue.split(","));
+            inputValue = inputValue.split(",")
+            JFCustomWidget.hideWidgetError();
+            // console.log(inputValue[0])
+            // console.log(inputValue[1])
+            jotFormDisplayName = JFCustomWidget.getWidgetSetting("displayName");
+
+            callNSFASCheck(inputValue[0], jotFormDisplayName);
+
+            var data = {
+                value: value,
+                valid: valid
+            }
+
+            //console.log(data.value)
+            JFCustomWidget.sendData(data);
+        }
+
+        //subscrive to ready
+        JFCustomWidget.subscribe("ready", function (msg) {
+            console.log("ready message arrived from JotForm", msg);
+            //subscribe to submit
+            JFCustomWidget.subscribe("submit", function (msg) {
+                var data2 = {
+                    value: "",
+                    valid: true
+                }
+                console.log(data2)
+                JFCustomWidget.sendSubmit(data2);
+
+                // console.log(jotFormStudentName)
+                // console.log(jotFormDisplayName)
+            });
+
+            JFCustomWidget.subscribe('populate', fillConditionValue);
+
+        });
+    </script>
+</body>
+
+</html>

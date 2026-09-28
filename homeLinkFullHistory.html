@@ -1,0 +1,774 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.3.0/font/bootstrap-icons.css">
+    <!-- <script src="https://cdn.tailwindcss.com"></script> -->
+
+    <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+     <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <script type="text/javascript">
+        (function () {
+            var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+            po.src = '//js.jotform.com/JotFormCustomWidget.min.js?onload=onLoadCallback';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+        })();
+    </script>
+  </head>
+    <body>
+        <style>
+            .form-control input, label {display: block;}
+
+            .form-control {height: 40px; width: 150px;}
+
+            .btn-group-vertical {position:relative; left:10px; top:2px;}
+
+            table {border: 0; max-width: 600px;}
+
+            table td {font-size: .8em; text-align: left; display: inline-block;}
+
+            table tr {
+                border-bottom: 1px solid black;
+            }​
+
+            table tr:last-child, tr:first-child { 
+                border-bottom: none; 
+            }
+            
+            #addRowButton {position:relative; top:10px;}
+        </style>
+        <script type="text/javascript">
+    
+            // var numOfIncorrectDates = 0;
+            var currFullWorkHistory = "No";
+    
+            var _data = {
+                'valid': true,
+                'value': [],
+            };
+    
+            var maxLimit;
+    
+            //Global functions
+            function modFields(rowNumber, activityType) {
+                console.log(activityType)
+    
+                //rowNumber = rowNumber - 1;
+                const nameOfEmployerId = "nameOfEmployer" + rowNumber;
+                const institutionId = "institution" + rowNumber;
+                const positionHeldId = "positionHeld" + rowNumber;
+                const gradeBandId = "gradeBand" + rowNumber;
+                const resultsId = "results" + rowNumber;
+                switch (activityType) {
+                    case "Employed":
+                        document.getElementById(nameOfEmployerId).value = "";
+                        document.getElementById(institutionId).value = "";
+                        document.getElementById(gradeBandId).value = "";
+                        document.getElementById(resultsId).value = "";
+                        document.getElementById(positionHeldId).value = "";
+    
+                        document.getElementById(nameOfEmployerId).disabled = false;
+                        document.getElementById(institutionId).disabled = true;
+                        document.getElementById(gradeBandId).disabled = false;
+                        document.getElementById(resultsId).disabled = true;
+                        document.getElementById(positionHeldId).disabled = false;
+                        break;
+                    case "Traveling":
+                        document.getElementById(nameOfEmployerId).value = "";
+                        document.getElementById(institutionId).value = "";
+                        document.getElementById(gradeBandId).value = "";
+                        document.getElementById(resultsId).value = "";
+                        document.getElementById(positionHeldId).value = "";
+    
+                        document.getElementById(nameOfEmployerId).disabled = true;
+                        document.getElementById(institutionId).disabled = true;
+                        document.getElementById(gradeBandId).disabled = true;
+                        document.getElementById(resultsId).disabled = true;
+                        document.getElementById(positionHeldId).disabled = true;
+                        break;
+                    case "Unemployed":
+                        document.getElementById(nameOfEmployerId).value = "";
+                        document.getElementById(institutionId).value = "";
+                        document.getElementById(gradeBandId).value = "";
+                        document.getElementById(resultsId).value = "";
+                        document.getElementById(positionHeldId).value = "";
+    
+                        document.getElementById(nameOfEmployerId).disabled = true;
+                        document.getElementById(institutionId).disabled = true;
+                        document.getElementById(gradeBandId).disabled = true;
+                        document.getElementById(resultsId).disabled = true;
+                        document.getElementById(positionHeldId).disabled = true;
+                        break;
+                    case "Studying":
+                        document.getElementById(nameOfEmployerId).value = "";
+                        document.getElementById(institutionId).value = "";
+                        document.getElementById(gradeBandId).value = "";
+                        document.getElementById(resultsId).value = "";
+                        document.getElementById(positionHeldId).value = "";
+    
+                        document.getElementById(nameOfEmployerId).disabled = true;
+                        document.getElementById(institutionId).disabled = false;
+                        document.getElementById(gradeBandId).disabled = true;
+                        document.getElementById(resultsId).disabled = false;
+                        document.getElementById(positionHeldId).disabled = true;
+                        break;
+                    case "Other":
+                        document.getElementById(nameOfEmployerId).value = "";
+                        document.getElementById(institutionId).value = "";
+                        document.getElementById(gradeBandId).value = "";
+                        document.getElementById(resultsId).value = "";
+                        document.getElementById(positionHeldId).value = "";
+    
+                        document.getElementById(nameOfEmployerId).disabled = true;
+                        document.getElementById(institutionId).disabled = true;
+                        document.getElementById(gradeBandId).disabled = true;
+                        document.getElementById(resultsId).disabled = true;
+                        document.getElementById(positionHeldId).disabled = true;
+                        break;
+                    default:
+                        document.getElementById(nameOfEmployerId).disabled = false;
+                        document.getElementById(institutionId).disabled = false;
+                        document.getElementById(gradeBandId).disabled = false;
+                        document.getElementById(resultsId).disabled = false;
+                        document.getElementById(positionHeldId).disabled = false;
+                }
+            }
+    
+            function getData(fieldToFill, fullHis) {
+    
+                var widgetValue = "";
+                var obj;
+    
+                var newTblData = $('tr').not(':first').map(function () {
+                    var obj = "";
+                    $(this).find('input, select, textarea').each(function () {
+                        obj += `<td style="border: 1px solid #dddddd; border-collapse: collapse; padding: 8px; text-align: left;" >${$(this).val() ?? ""}</td>`
+                    });
+                    return `<tr>${obj ?? ""}</tr>`;
+                }).get();
+    
+                var newTblHeader = `<tr id="tblHeading">
+                    <th style="border: 1px solid #dddddd; border-collapse: collapse; padding: 8px; text-align: left;">Address Line 1</th>
+                    <th style="border: 1px solid #dddddd; border-collapse: collapse; padding: 8px; text-align: left;">Address Line 2</th>
+                    <th style="border: 1px solid #dddddd; border-collapse: collapse; padding: 8px; text-align: left;">City</th>
+                    <th style="border: 1px solid #dddddd; border-collapse: collapse; padding: 8px; text-align: left;">Post Code</th>
+                    <th style="border: 1px solid #dddddd; border-collapse: collapse; padding: 8px; text-align: left;">Start Date</th>
+                    <th style="border: 1px solid #dddddd; border-collapse: collapse; padding: 8px; text-align: left;">End Date</th>
+                </tr>`
+    
+                var widgetValue = JFCustomWidgetUtils.buildMetadata('htmltext', btoa(unescape(encodeURIComponent(`<table style="width: 100%; overflow: auto; table-layout: fixed;"><tbody>${newTblHeader}${newTblData}</tbody></table>`))));
+    
+                _data.value = widgetValue;
+    
+                JFCustomWidget.setFieldsValueById([{
+                    id: fieldToFill,
+                    value: JSON.stringify(widgetValue)
+                }]);
+    
+                return _data
+            }
+    
+            function validateDates() {
+                var numOfIncorrectDates = 0;
+
+                const currRowLength = document.getElementsByName("Start Date")?.length
+
+                currFullWorkHistory = JFCustomWidget?.getWidgetSetting("fullWorkHistory");
+    
+                console.log("currFullWorkHistory: " , currFullWorkHistory)
+                for (let i = 0; i < currRowLength; i++) {
+                    let currEndDate = document.getElementsByName("End Date")[i]?.value; //check undefinded
+                    let currStartDate = document.getElementsByName("Start Date")[i + 1]?.value; //check undefinded
+                    if (currFullWorkHistory === "Yes") {
+                        var dateDiffRes = [{
+                            id: "215",
+                            value: ""
+                        }]
+                    }
+                    else {
+                        var dateDiffRes = [{
+                            id: "439",
+                            value: ""
+                        }]
+                    }
+                    console.log("EmpTo", currEndDate)
+                    console.log("EmpFrom", currStartDate)
+                    if (currEndDate != null && currStartDate != null) {
+                        document.getElementsByName("End Date")[i].style = "background-color: none;"
+                        document.getElementsByName("End Date")[i + 1].style = "background-color: none;"
+                        document.getElementsByName("Start Date")[i].style = "background-color: none;"
+                        document.getElementsByName("Start Date")[i + 1].style = "background-color: none;"
+                        console.log("all good")
+                        if (getMonthDifference(new Date(currEndDate), new Date(currStartDate)) >= 1) {
+                            document.getElementsByName("End Date")[i].style = "background-color: red;"
+                            document.getElementsByName("Start Date")[i + 1].style = "background-color: red;"
+                            numOfIncorrectDates = numOfIncorrectDates + 1
+                            // _data.valid = false
+                            // return false
+                            //return { value: "Yes", valid: false };
+                        }
+                        else {
+                            document.getElementsByName("End Date")[i].style = "background-color: none;"
+                            document.getElementsByName("Start Date")[i + 1].style = "background-color: none;"
+                            // numOfIncorrectDates = numOfIncorrectDates - 1;
+                            // _data.valid = true
+                        }
+                        //add coomments to array
+                    }
+                }
+
+                console.log(numOfIncorrectDates)
+                if (numOfIncorrectDates >= 1) {
+                    console.log("1 month data diff")
+                    dateDiffRes[0].value = "Yes";
+                    console.log("Invalid dates = ", dateDiffRes)
+                    JFCustomWidget.setFieldsValueById(dateDiffRes);
+                    console.log("here")
+                    return false
+                }
+                else {
+                    dateDiffRes[0].value = "No";
+                    console.log("Valid dates = ", dateDiffRes)
+                    JFCustomWidget.setFieldsValueById(dateDiffRes);
+                    return true
+                }
+            }
+    
+            function getMonthDifference(startDate, endDate) {
+                return (
+                    endDate.getMonth() -
+                    startDate.getMonth() +
+                    12 * (endDate.getFullYear() - startDate.getFullYear())
+                );
+            }
+    
+            function deleteRow(id) {
+                var table = document.getElementById('emptbl');
+                var rowCount = table.rows.length;
+                if (rowCount === 1) {
+                    console.log("There should be atleast one row");
+                    return
+                }
+                else if (rowCount > 2) {
+                    var row = table.deleteRow(id);
+                    resizeFrame();
+                    validateDates();
+                    makeWidgetRequiredOrNot()
+                    return
+                    //rowCount--;
+                }
+            }
+    
+            function moveRowUp(tblRow) {
+                // $("tblHeading").prev(tblRow )
+                const prevRow = $(tblRow).prev()[0].id
+                console.log(prevRow)
+                if (prevRow === "tblHeading") {
+                    console.log("here");
+                    return;
+                }
+                console.log($(tblRow).prev()[0])
+                $(tblRow).prev().before($(tblRow));
+                validateDates();
+                makeWidgetRequiredOrNot()
+                return
+            }
+    
+            function moveRowDown(tblRow) {
+                const nextRow = $(tblRow).next();
+                if (nextRow.length === 0) {
+                    console.log("length ", nextRow.length);
+                    return;
+                }
+                $(tblRow).next().after($(tblRow));
+                validateDates();
+                makeWidgetRequiredOrNot()
+                return;
+            }
+    
+            function resizeFrame() {
+                const currHeight = $("form").height();
+                JFCustomWidget.requestFrameResize({ width: 1000, height: currHeight + 10 })
+            }
+    
+            $(function () {
+                function EducationExperienceList(containerId, formData, params) {
+    
+                    var yearOfBirth;
+                    var fieldToStoreData = params["storageField"];
+    
+                    /**
+                   * Exposed
+                   */
+                    this.init = init;
+                    this.getData = getData;
+                    this.setCompanyNames = setCompanyNames;
+                    this.resizeFrame = resizeFrame;
+                    this.restoreTableData = restoreTableData;
+                    //  this.makeWidgetRequiredOrNot = makeWidgetRequiredOrNot
+    
+                    const currMaxYear = maxYear();
+    
+    
+                    //mobile
+                    // $('#listContainer').css('overflow-x', 'auto');
+    
+                    function init() {
+    
+                        // $('#' + containerId).attr('data-widget-name', 'e7ce64589c330d6bb7bf8c25').html(buildHTML);
+                        console.log("form Data = ", formData)
+                        console.log("form data value = ", formData.value)
+    
+                        if (formData.value !== undefined && formData.value !== "") {
+                            try {
+                                restoreTableData(JSON.parse(formData.value))
+                            } catch (error) {
+                                try {
+                                    var tempValue = formData.value.replace(/&quot;/g, '\"');
+                                    console.log("DECODE: ", tempValue);
+                                    restoreTableData(tempValue);
+                                } catch (error) {
+                                    
+                                }
+                                
+                            }
+                        }
+                        // if (params["fullWorkHistory"] === "Yes") {
+                        //     JFCustomWidget.getFieldsValueById(["11"], function (res) {
+                        //         console.log("res by Name= ", res.data[0].value);
+                        //         const strDate = res.data[0].value;
+    
+                        //         const [day, month, year] = strDate.split('/');
+                        //         console.log(month);
+                        //         console.log(day);
+                        //         console.log(year);
+                        //         const correctDateFormat = new Date(+year, +month - 1, +day);
+                        //         console.log(correctDateFormat);
+    
+                        //         yearOfBirth = (new Date(correctDateFormat)).getFullYear();
+                        //         console.log("Year Of Birth = ", yearOfBirth);
+    
+                        //         var schoolLeavingAge = yearOfBirth + 18
+                        //         var currYear = new Date().getFullYear();
+    
+                        //         maxLimit = Math.abs(currYear - schoolLeavingAge);
+    
+                        //         makeWidgetRequiredOrNot();
+    
+                        //     });
+                        // }
+                        // Create a condition that targets viewports at least 800px wide
+                        const mediaQuery = window.matchMedia('(min-width: 800px)')
+    
+                        function handleScreenChange(e) {
+                            if (e.matches) {
+                                console.log('Matched!')
+                                resizeFrame();
+                            }
+                            else {
+                                console.log("Doesn't Match!")
+                                resizeFrame();
+                            }
+                        }
+    
+                        mediaQuery.addListener(handleScreenChange)
+    
+                        handleScreenChange(mediaQuery)
+    
+                        $('#addRowButton').on('click', function (event) {
+                            addRow();
+                            makeWidgetRequiredOrNot();
+                        });
+    
+                        $(document).ready(function () {
+                            // $('html').css('overflow-x', 'initial');
+    
+                            console.log("ready!");
+                            makeWidgetRequiredOrNot();
+                        });
+    
+                        $('input, select, textarea').on('change', JFCustomWidget.sendData(getData(fieldToStoreData)));
+    
+                        $("input[type=date]").attr("min", currMaxYear);
+                    }
+    
+                    function maxYear() {
+                        var maxYearForDates;
+                        if (params["fullWorkHistory"] === "Yes") {
+                            maxYearForDates = yearOfBirth + 18;
+                        }
+                        else {
+                            maxYearForDates = new Date().getFullYear() - 5;
+                        }
+                        console.log(maxYearForDates + "-01" + "-01")
+                        //input.setAttribute("min", maxYearForDates);
+                        return maxYearForDates + "-01" + "-01"
+                    }
+    
+                    // const currMaxYear = maxYear();
+    
+                    function addRow(isPop, popData) {
+                        if ($('input:invalid').length > 1) {
+                            JFCustomWidget.showWidgetError("Please make sure that all fields are correctly filled in");
+                            // JFCustomWidget.sendSubmit({ valid: false });
+                            return
+                        }
+                        else {
+                            JFCustomWidget.hideWidgetError();
+                            // JFCustomWidget.sendSubmit({ valid: true });
+    
+                            var table = document.getElementById("emptbl");
+                            // GET TOTAL NUMBER OF ROWS 
+                            var x = table.rows.length;
+                            var id = "tbl" + x;
+                            var row = table.insertRow(x);
+                            row.id = id;
+                            // var rowNumberCell = row.insertCell(0);
+                            var addressLine1Cell = row.insertCell(0);
+                            var addressLine2Cell = row.insertCell(1);
+                            var cityCell = row.insertCell(2);
+                            var postCodeCell = row.insertCell(3);
+                            var startDateCell = row.insertCell(4);
+                            var endDateCell = row.insertCell(5);
+                            var buttonsCell = row.insertCell(6);
+                            // rowNumberCell.outerHTML = `<th style="padding: 20px; fontSize:30px;" name="rowNumberColumn[]" id="rowNumber${x}">≡</th>`;
+                            addressLine1Cell.innerHTML = `<div class="form-group"><label for="addressLine1${x}" class="form-label">Address Line 1</label><input class="form-control" type="textarea" name="Address Line 1" value="" id="addressLine1${x}" required /></div>`;
+                            addressLine2Cell.innerHTML = `<div class="form-group"><label for="addressLine2${x}" class="form-label">Address Line 2</label><input class="form-control" type="textarea" name="Address Line 2" value="" id="addressLine2${x}"/></div>`;
+                            cityCell.innerHTML = `<div class="form-group"><label for="city${x}" class="form-label">City</label><input class="form-control" type="textarea" name="City" value="" id="city${x}" required /></div>`;
+                            postCodeCell.innerHTML = `<div class="form-group"><label for="postCode${x}" class="form-label">Post Code</label><input class="form-control" type="textarea" name="Post Code" value="" id="postCode${x}" required /></div>`;
+                            startDateCell.innerHTML = `<div class="form-group"><label for="startDate${x}" class="form-label">Start Date</label><input class="form-control" type="date" name="Start Date" onchange="validateDates()" value="" id="startDate${x}" required /></div>`;
+                            endDateCell.innerHTML = `<div class="form-group"><label for="endDate${x}" class="form-label">End Date</label><input class="form-control" type="date" name="End Date" onchange="validateDates()" value="" id="endDate${x}" /></div>`;
+                            buttonsCell.innerHTML = `<div class="btn-group-vertical"><button type="button" id="upRow${x}" onclick="moveRowUp(${id})">↑</button> <button class="bi bi-trash" type="button" id="deleteRow${x}" onclick="deleteRow(${x})"></button> <button type="button" id="downRow${x}" onclick="moveRowDown(${id})">↓</button></div>`;    
+                            //set values
+                            if (isPop) {
+                                document.getElementById(`addressLine1${x}`).value = popData["Address Line 1"] ?? "";
+                                document.getElementById(`addressLine2${x}`).value = popData["Address Line 2"] ?? "";
+                                document.getElementById(`postCode${x}`).value = popData["Post Code"] ?? "";
+                                document.getElementById(`city${x}`).value = popData["City"] ?? "";
+                                //modFields(x, popData["Type of Activity"] ?? "");
+                                document.getElementById(`startDate${x}`).value = popData["Start Date"] ?? "";
+                                document.getElementById(`endDate${x}`).value = popData["End Date"] ?? "";
+                            }
+    
+                            resizeFrame();
+                            JFCustomWidget.sendData(getData(fieldToStoreData));
+                        }
+                    }
+    
+                    function getCompanyNames() {
+                        const currRowLength = document.getElementsByName("Name of Employer")?.length
+                        console.log("Employer by name = ", document.getElementsByName("Name of Employer"))
+                        let arr = []
+                        for (let i = 0; i < currRowLength; i++) {
+                            let currNameOfEmployer = document.getElementsByName("Name of Employer")[i]?.value; //check undefinded
+                            let currActType = document.getElementsByName("Type of Activity")[i]?.value; //check undefinded
+                            console.log("Em", currActType)
+                            console.log("nameEm", currNameOfEmployer)
+                            if (currNameOfEmployer != null && currActType === "Employed" && arr.length < 6) {
+                                arr.push(currNameOfEmployer);
+                            }
+                        }
+                        console.log("arr length = ", arr.length)
+                        return arr;
+                    }
+    
+                    function restoreTableData(dataObj) {
+                        try {
+                            dataObj.forEach(function (obj) {
+                                if (Object.keys(obj).length !== 0) {
+                                    console.log(obj)
+                                    addRow(true, obj)
+                                }
+                            })
+                            makeWidgetRequiredOrNot();
+    
+                        } catch (error) {
+                            try {
+                                if (typeof dataObj === "string") {
+                                    var dataObj = JSON.parse(dataObj)
+                                }
+                            } catch (error2) { //due to dataObj being stored in a field
+                                console.log(error2)
+                            }
+                            console.log(error)
+                            // var dataObj = JSON.parse(dataObj)
+                            console.log("DATA OBJECT: ", dataObj)
+                            console.log("DATA OBJECT2: ", dataObj?.widget_metadata)
+                            console.log("DATA OBJECT3: ", dataObj?.widget_metadata?.value)
+                            var newWidgetValue1 = decodeURIComponent(escape(atob(dataObj.widget_metadata.value)));
+                            // console.log("test01 = ", JSON.parse(JSON.stringify($.parseHTML(newWidgetValue1))))
+    
+                            var newTbl = $(newWidgetValue1).find('tr:has(td)').map(function (i, v) {
+                                var $td = $('td', this);
+                                return {
+                                    "Address Line 1": $td.eq(0).text(),
+                                    "Address Line 2": $td.eq(1).text(),
+                                    "Post Code": $td.eq(2).text(),
+                                    "City": $td.eq(3).text(),
+                                    "Start Date": $td.eq(4).text(),
+                                    "End Date": $td.eq(5).text(),
+                                }
+                            }).get();
+    
+    
+                            console.log("NEW VALUES: ", newTbl)
+    
+                            newTbl.forEach(function (tblInfo) {
+                                if (Object.keys(tblInfo).length !== 0) {
+                                    console.log(tblInfo)
+                                    addRow(true, tblInfo)
+                                }
+                            })
+                            makeWidgetRequiredOrNot();
+    
+    
+                            // var newTblData1 = $.parseHTML(newWidgetValue1).tableToJSON();
+                            // console.log("new date for table = ", newTblData1)
+    
+                            return
+                        }
+                    }
+    
+                    function setCompanyNames(fieldIds) {
+                        let currNames = getCompanyNames();
+                        let fillArr = []
+                        for (let i = 0; i < fieldIds.length; i++) {
+                            if (currNames[i] !== undefined && currNames[i] !== "") {
+                                fillArr.push({
+                                    id: fieldIds[i],
+                                    value: currNames[i]
+                                })
+                            }
+                        }
+                        JFCustomWidget.setFieldsValueById(fillArr);
+                        console.log(fillArr)
+                    }
+                }
+
+                JFCustomWidget.subscribe('populate', fillConditionValue);
+
+                function fillConditionValue(data) {
+                    try {
+                        makeWidgetRequiredOrNot()
+
+                        var tbl = document.getElementById("emptbl");
+
+                        currFullWorkHistory = JFCustomWidget.getWidgetSetting("fullWorkHistory");
+
+                        console.log(currFullWorkHistory)
+
+                        if (currFullWorkHistory === "Yes" && data.value !== "") {
+                            widget.restoreTableData(JSON.parse(data.value));
+                            makeWidgetRequiredOrNot();
+                        }
+                        
+                    } catch (error) {
+                        console.log("ERROE!: ", error);
+                    }
+                    
+                }
+    
+                JFCustomWidget.subscribe('ready', function (data) {
+                    // console.log('Education Experience List ready', data);
+                    var widget = new EducationExperienceList('Test01', data, JFCustomWidget.getWidgetSettings());
+                    widget.init();
+                    widget.resizeFrame();
+    
+                    var currParams = JFCustomWidget.getWidgetSettings();
+                    if (currParams.fullWorkHistory === "No") {
+                        maxLimit = 5;
+                    }
+    
+                    //console.log(JFCustomWidget)
+    
+                    JFCustomWidget.subscribe('submit', function (data6) {
+                        console.log(data6)
+                        // console.log("year of birth ", yearOfBirth)
+                        const widgetParm = JFCustomWidget.getWidgetSettings();
+                            //widget.setCompanyNames([widgetParm["companyField1"], widgetParm["companyField2"], widgetParm["companyField3"], widgetParm["companyField4"], widgetParm["companyField5"], widgetParm["companyField6"]]);
+                            makeWidgetRequiredOrNot()
+                            getData(widgetParm["storageField"])
+                            JFCustomWidget.sendSubmit({ valid: true, value: _data.valid ? "" : _data.value });
+                        console.log(widgetParm["storageField"]);
+    
+                        // send the data
+                        // JFCustomWidget.sendSubmit(widget.getData(widgetParm["storageField"]));
+                    });
+    
+                });
+            })
+    
+    
+            function makeWidgetRequiredOrNot() {
+                var currTable = document.getElementById('emptbl');
+                var currRowCount = currTable.rows.length;
+                console.log("CURRENT ROW COUNT: ", currRowCount)
+                //Validate years since school leaving age
+                
+                console.log($('input:invalid').length)
+    
+                if (currRowCount <= 1) {
+                    // console.log(JFCustomWidget)
+                    // console.log(JFCustomWidget.isWidgetRequired())
+                    // JFCustomWidget.makeWidgetRequired();
+                    JFCustomWidget.showWidgetError("Please click the Add Row button to complete this section")
+                    _data.valid = true
+                    return
+                }
+                // if ($('input:invalid').length >= 1) {
+                //     console.log(JFCustomWidget.isWidgetRequired())
+                //     //JFCustomWidget.makeWidgetRequired();
+                //     JFCustomWidget.showWidgetError("Please make sure that all fields are correctly filled in")
+                //     _data.valid = true
+                //     return
+                // }
+                try {
+                    var required1 = $('input,textarea,option:selected').filter('[required]:enabled');
+                    var allRequired = true;
+                    required1.each(function(){
+                        if($(this).val() == ''){
+                            allRequired = false;
+                        }
+                    });
+
+                    if(!allRequired){
+                        console.log(JFCustomWidget.isWidgetRequired())
+                        //JFCustomWidget.makeWidgetRequired();
+                        JFCustomWidget.showWidgetError("Please make sure that all fields are correctly filled in")
+                        _data.valid = true
+                        return
+                    }
+                } catch (error) {
+                    
+                }
+                if (validateWidget() === false) {
+                    _data.valid = true
+                    //JFCustomWidget.makeWidgetRequired();
+                    //JFCustomWidget.showWidgetError("Please make sure that all fields are correctly filled in")
+                    return
+                }
+                else {
+                    JFCustomWidget.makeWidgetNotRequired();
+                    JFCustomWidget.hideWidgetError();
+                    _data.valid = false
+                    return
+                }
+            }
+    
+            function validateWidget() {
+                const currRowLength = document.getElementsByName("Start Date")?.length
+                var dateDiffSum = 0;
+                var diffDays = 0;
+                var testArr = [];
+                var totalYears;
+    
+                for (let i = 0; i < currRowLength; i++) {
+                    let currEndDate = document.getElementsByName("End Date")[i]?.value; //check undefinded
+                    let currStartDate = document.getElementsByName("Start Date")[i]?.value; //check undefinded
+    
+                    testArr.push(currStartDate, currEndDate)
+    
+                    if (currEndDate === undefined || currEndDate === "") {
+                        var todaysDate = new Date();
+    
+                        console.log("today's date = ", todaysDate);
+    
+                        diffDays = parseInt((todaysDate - new Date(currStartDate)) / (1000 * 60 * 60 * 24), 10);
+                        console.log("empty end date field");
+                    }
+                    else {
+                        diffDays = parseInt((new Date(currEndDate) - new Date(currStartDate)) / (1000 * 60 * 60 * 24), 10);
+                    }
+    
+                    dateDiffSum = dateDiffSum + diffDays
+                }
+                console.log(dateDiffSum);
+                console.log("curr dates = ", testArr);
+                totalYears = Math.floor(dateDiffSum / 365)
+    
+                if (totalYears < maxLimit) {
+                    JFCustomWidget.showWidgetError("Please make sure you've listed all posts held in the last " + maxLimit + " years")
+                    // JFCustomWidget.sendSubmit({ valid: false });
+                    return false
+                }
+                else {
+                    JFCustomWidget.hideWidgetError();
+                    // JFCustomWidget.sendSubmit({ valid: true });
+                    return true
+                }
+            }
+    
+            function test01() {
+   
+                JFCustomWidget.getFieldsValueById(["25"], function (res) {
+                    console.log("GAP VALUE: ", res.data[0].value);
+    
+                    });
+            }
+    
+            // function test02() {
+    
+            //     var newTblData = $('tr').not(':first').map(function () {
+            //         var obj;
+            //         var newRow
+            //         $(this).find('input, select, textarea').each(function () {
+            //             if ($(this).val() !== undefined) {
+            //                 obj += `<td>${$(this).val() ?? ""}</td>`
+            //             }
+            //         });
+            //         return `<tr>${obj}</tr>`;
+            //     }).get();
+    
+            //     console.log("new table row =  ", newTblData)
+            // }
+    
+        </script>
+        <form id="educationExperienceList[]" name="educationExperienceList" action="#"
+            onchange="makeWidgetRequiredOrNot()">
+            <table id="emptbl">
+                <tbody>
+                    <tr id="tblHeading" class="table">
+                        <p>Click the Add Row button to add an Address</p>
+                        <!-- <th></th>
+                        <th>Type of activity</th>
+                        <th>Company</th>
+                        <th>Institution</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Position Held</th>
+                        <th>Grade/Band</th>
+                        <th>Results</th>
+                        <th>Comments</th>
+                        <th></th> -->
+                    </tr>
+                </tbody>
+            </table>
+            <table>
+                <tr>
+                    <button type="button" id="addRowButton">Add Row</button>
+                    <!-- <button type="button" id="test1" onclick="test01()"> True </button> -->
+                     <!--<button type="button" id="test2" onclick="test02()"> False </button> -->
+                    <span>
+                        <p id="textArea"></p>
+                    </span>
+                </tr>
+            </table>
+        </form>
+    </body>
+</html>
+
+<!--
+    Todo
+
+-->

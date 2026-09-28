@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+    <link type="text/css" rel="stylesheet"
+        href="https://digiblu.jotform.com/themes/CSS/5e6b428acc8c4e222d1beb91.css?v=3.3.57758" />
+    <link type="text/css" rel="stylesheet"
+        href="https://digiblu.jotform.com/css/styles/payment/payment_styles.css?3.3.57758" />
+    <link type="text/css" rel="stylesheet"
+        href="https://digiblu.jotform.com/css/styles/payment/payment_feature.css?3.3.57758" />
+    <link type="text/css" rel="stylesheet"
+        href="https://digiblu.jotform.com/stylebuilder/static/form-common.css?v=3c1609c" />
+    <script type="text/javascript">
+        (function () {
+            var po = document.createElement('script');
+            po.type = 'text/javascript';
+            po.async = true;
+            po.src = '//js.jotform.com/JotFormCustomWidget.min.js?onload=onLoadCallback';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(po, s);
+        })();
+    </script>
+</head>
+
+<style>
+</style>
+
+<body>
+    <script>
+        "use strict";
+
+        var params;
+        var textToClassify;
+
+        function setClassification(currClassification) {
+            JFCustomWidget.setFieldsValueById([{
+                id: params.fieldToFill,
+                value: currClassification
+            }]);
+
+            JFCustomWidget.sendData(currClassification);
+        }
+
+        async function classifyText(textToClassify) {
+            const url = "https://mjobe-document-vqa-v2.hf.space/test_classify/"
+            var formdata = new FormData();
+            formdata.append('text', textToClassify);
+
+            var requestOptions = {
+                method: 'POST',
+                body: formdata,
+                redirect: 'follow',
+                headers: {
+                    "Access-Control-Allow-Origin": "http://127.0.0.1:5500",
+                    //"Access-Control-Allow-Credentials": true,
+                    "Access-Control-Allow-Methods": "POST",
+                    "Access-Control-Allow-Headers": "Content-Type",
+                },
+            };
+
+            fetch(url, requestOptions)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('API Response:', data);
+                    setClassification(data?.label);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+
+        function fillConditionValue(data) {
+            console.log("Fill Data", data);
+            classifyText(data?.value);
+        }
+
+        function resizeFrame() {
+            const currHeight = $("body").height();
+            JFCustomWidget.requestFrameResize({ width: 1000, height: currHeight })
+        }
+
+        JFCustomWidget.subscribe('populate', fillConditionValue);
+
+        JFCustomWidget.subscribe('ready', function (data) {
+            console.log("Data Ready", data);
+            console.log("JFCustomWidget", JFCustomWidget);
+            console.log("JFCustomWidgetUtils", JFCustomWidgetUtils);
+            params = JFCustomWidget.getWidgetSettings();
+        });
+
+        JFCustomWidget.subscribe('submit', function (data) {
+            console.log("Form submitted with:", data);
+        });
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/progressbar.js/1.1.0/progressbar.min.js"
+        integrity="sha512-EZhmSl/hiKyEHklogkakFnSYa5mWsLmTC4ZfvVzhqYNLPbXKAXsjUYRf2O9OlzQN33H0xBVfGSEIUeqt9astHQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/progressbar.js/1.1.0/progressbar.js"
+        integrity="sha512-1H+cM+oeza0TJglvGWQHdb6cW2gS2ptQE9s0wV24+OaTmr60hZdRgGDqfuEzlbrb7NyOHCsY21Y4/AoKFwmiug=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script type="text/javascript">
+        (function () {
+            var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+            po.src = '//js.jotform.com/JotFormCustomWidget.min.js?onload=onLoadCallback';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+        })();
+    </script>
+</head>
+<div id="container"></div>
+
+<body>
+    <style>
+        #container {
+            margin: 20px;
+            width: 400px;
+            height: 8px;
+            position: relative;
+        }
+    </style>
+    <script type="text/javascript">
+        var bar = new ProgressBar.Line(container, {
+            strokeWidth: 4,
+            easing: 'easeInOut',
+            duration: 1400,
+            color: '#5AED70',
+            trailColor: '#eee',
+            trailWidth: 1,
+            svgStyle: { width: '100%', height: '100%' },
+            text: {
+                style: {
+                    // Text color.
+                    // Default: same as stroke color (options.color)
+                    color: '#999',
+                    position: 'absolute',
+                    right: '0',
+                    top: '30px',
+                    padding: 0,
+                    margin: 0,
+                    transform: null
+                },
+                autoStyleContainer: false
+            },
+            from: { color: '#FFEA82' },
+            to: { color: '#ED6A5A' },
+            step: (state, bar) => {
+                bar.setText(Math.round(bar.value() * 100) + ' % Complete');
+            }
+        });
+
+        $(function () {
+            function getInfoWidget(containerId, formData, params) {
+
+                /**
+               * Exposed
+               */
+                this.init = init;
+                this.getEternalInfo = getEternalInfo;
+
+                function init() {
+
+                    console.log(formData)
+                    console.log(params)
+
+                    console.log(JFCustomWidget.getWidgetSettings())
+
+                    JFCustomWidget.getFieldsValueByName(["originalSubmission"], function (res) {
+                        console.log("originalSubmission = ", res.data[0].value)
+                        originalSubmissionId = res.data[0].value;
+                        getEternalInfo();
+                    });
+                }
+
+                function getEternalInfo() {
+                    console.log(`https://eu-api.jotform.com/submission/${originalSubmissionId}?apiKey=${params["apiKey"]}`)
+                    jQuery.ajax({
+                        url: `https://eu-api.jotform.com/submission/${originalSubmissionId}?apiKey=${params["apiKey"]}`,
+                        method: "GET",
+                        // dataType: "json",
+                        success: function (responseData, textStatus, jqXHR) {
+                            console.log(responseData);
+                            checkAnswers(responseData.content.answers[5].answer);
+                            JFCustomWidget.setFieldsValueById([{
+                                id: "5",
+                                value: responseData.content.answers[6].answer
+                            }]);
+                        },
+                        error: function (responseData, textStatus, jqXHR) {
+                            console.log(responseData);
+                            return
+                        }
+                    })
+                }
+            }
+
+            function checkAnswers(currAnswer) {
+                switch (currAnswer) {
+                    case "Awaiting Review":
+                        bar.animate(.25);
+                        bar.setText(Math.round(bar.value() * 100) + ' % Complete' + " status: " + currAnswer);
+                        break;
+                    case "In Progress":
+                        bar.animate(.50);
+                        bar.setText(Math.round(bar.value() * 100) + ' % Complete' + " status: " + currAnswer);
+                        break;
+                    case "Approved":
+                        bar.animate(1);
+                        bar.setText(Math.round(bar.value() * 100) + ' % Complete' + " status: " + currAnswer);
+                        break;
+
+                    default:
+                        break;
+                }
+            }
+
+            JFCustomWidget.subscribe('ready', function (data) {
+                var widget = new getInfoWidget('Test01', data, JFCustomWidget.getWidgetSettings());
+                widget.init();
+
+                JFCustomWidget.subscribe('populate', fillConditionValue);
+
+                function fillConditionValue(data) {
+                    JFCustomWidget.hideWidgetError();
+                }
+
+                JFCustomWidget.subscribe('submit', function () {
+                    // send the data
+                    // JFCustomWidget.sendSubmit({value: "Control form updated", valid:true});
+                });
+            });
+        })
+
+    </script>
+</body>
+
+</html>

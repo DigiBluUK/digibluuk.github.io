@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <title>Take Photo</title>
+
+    <style type="text/css" media="all">
+        html {
+            background: #111111;
+            height: 100%;
+            background: linear-gradient(#333, #000);
+        }
+
+        canvas {
+            display: none;
+        }
+
+        video,
+        img,
+        #startbutton {
+            display: block;
+            float: left;
+            border: 10px solid #fff;
+            border-radius: 10px;
+        }
+
+        #startbutton {
+            background: green;
+            border: none;
+            color: #fff;
+            margin: 100px 20px 20px 20px;
+            padding: 10px 20px;
+            font-size: 20px;
+        }
+
+        #container {
+            overflow: hidden;
+            width: 880px;
+            margin: 20px auto;
+        }
+    </style>
+
+    <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
+</head>
+
+<body>
+    <video id="video"></video>
+    <button id="startbutton">Take photo</button>
+    <canvas id="canvas"></canvas>
+    <img src="http://placekitten.com/g/200/150" id="photo" alt="photo">
+
+
+    <script type="text/javascript" charset="utf-8">
+
+        (function () {
+
+            var streaming = false,
+                video = document.querySelector('#video'),
+                cover = document.querySelector('#cover'),
+                canvas = document.querySelector('#canvas'),
+                photo = document.querySelector('#photo'),
+                startbutton = document.querySelector('#startbutton'),
+                width = 200,
+                height = 0;
+
+            navigator.getMedia = (navigator.getUserMedia ||
+                navigator.webkitGetUserMedia ||
+                navigator.mozGetUserMedia ||
+                navigator.msGetUserMedia);
+
+            navigator.getMedia(
+                {
+                    video: true,
+                    audio: false
+                },
+                function (stream) {
+                    if (navigator.mozGetUserMedia) {
+                        video.mozSrcObject = stream;
+                    } else {
+                        var vendorURL = window.URL || window.webkitURL;
+                        video.src = vendorURL ? vendorURL.createObjectURL(stream) : stream;
+                    }
+                    video.play();
+                },
+                function (err) {
+                    console.log("An error occured! " + err);
+                }
+            );
+
+            video.addEventListener('canplay', function (ev) {
+                if (!streaming) {
+                    height = video.videoHeight / (video.videoWidth / width);
+                    video.setAttribute('width', width);
+                    video.setAttribute('height', height);
+                    canvas.setAttribute('width', width);
+                    canvas.setAttribute('height', height);
+                    streaming = true;
+                }
+            }, false);
+
+            function takepicture() {
+                canvas.width = width;
+                canvas.height = height;
+                canvas.getContext('2d').drawImage(video, 0, 0, width, height);
+                var data = canvas.toDataURL('image/jpeg');
+                photo.setAttribute('src', data);
+
+                //send data to jotform at every photo
+                var data = {
+                    valid: photo.src.length === 0 ? false : true, //if photo is emtpty it is not valid
+                    value: photo.src
+                }
+                JFCustomWidget.sendData(data);
+            }
+
+            startbutton.addEventListener('click', function (ev) {
+                takepicture();
+                ev.preventDefault();
+            }, false);
+
+            //subscrive to ready
+            JFCustomWidget.subscribe("ready", function (msg) {
+                console.log("ready message arrived from JotForm", msg);
+            });
+
+            //subscribe to submit event
+            JFCustomWidget.subscribe("submit", function () {
+                //prepare your data
+                var data = {}
+                //check validity
+                if (photo.src.length === 0 || photo.src.match('placekitten') !== null) {
+                    data.valid = false
+                } else {
+                    data.valid = true,
+                        data.value = photo.src
+                }
+
+                JFCustomWidget.sendSubmit(data);
+            });
+
+        })();
+
+
+    </script>
+    <div style="position: absolute; display: none; z-index: 16777271;"></div>
+</body>
+
+</html>

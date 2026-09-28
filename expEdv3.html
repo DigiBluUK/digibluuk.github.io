@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <!-- <script type="text/javascript">
+        (function () {
+            var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+            po.src = '//js.jotform.com/JotFormCustomWidget.min.js?onload=onLoadCallback';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+        })();
+    </script> -->
+</head>
+<style>
+</style>
+
+<body>
+    <div class="col-lg-6 pl-2">
+        <div class="form-input-div">
+            <h2>Please select the type of activity</h2>
+            <!--pass here value-->
+            <select onchange="showFields(this.value)" class="form-control">
+                <option>Select Type of activity</option>
+                <option>Employed</option>
+                <option>Traveling</option>
+                <option>Unemployed</option>
+                <option>Studying</option>
+                <option>Other</option>
+            </select>
+        </div>
+    </div>
+    <div class="row" id="fieldDetails"></div>
+    <table id="table">
+        <tr>
+        </tr>
+    </table>
+    <script type="text/javascript">
+        var currMaxYear = "2019-01-01"
+
+        //change to chase statement
+        function showFields(value) {
+            var element = document.getElementById("fieldDetails");
+            element.innerHTML = "" //empty 
+            switch (value) {
+                case "Employed":
+                    element.innerHTML += `Name of Employer <input id="emNameOfEmployer" type="text" name="nameOfEmployer[]" value="" />
+                Employed From <input id="emEmployerFrom" type="date" name="employedFrom[]" min=${currMaxYear} value="" />
+                Employed To <input id="emEmployerTo" type="date" name="employedTo[]" min=${currMaxYear} value="" />
+                Number of Hours Worked <input id="emNumberOfHoursWorked" type="text" name="numberOfHoursWorked[]" value="" />
+                Details of Position Held <input id="emDetailsOfPositionHeld" type="text" name="detailsOfPositionHeld[]" value="" />
+                Reason For Leaving <textarea id="emReasonForLeaving" type="text" name="reasonForLeaving[]" value=""></textarea>
+                <input type="button" value="Add to table" onclick="addToTable('Employed')" />`;
+                    break;
+                case "Traveling":
+                    element.innerHTML += `Date Travelled From <input type="date" name="employedFrom[]" min=${currMaxYear} value="" />
+                Date Travelled To <input type="date" name="employedTo[]" min=${currMaxYear} value="" />
+                Reason For Travel <textarea type="text" name="reasonForLeaving[]" value=""></textarea>
+                <input type="button" value="Add to table" onclick="addRow()" />`
+                    break;
+                case "Unemployed":
+                    element.innerHTML += `Unemployed From <input type="date" name="employedFrom[]" min=${currMaxYear} value="" />
+                    Unemployed To <input type="date" name="employedTo[]" min=${currMaxYear} value="" />
+                Reason For Unemployment <textarea type="text" name="reasonForLeaving[]" value=""></textarea>
+                <input type="button" value="Add to table" onclick="addRow()" />`
+                    break;
+                case "Studying":
+                    // code block
+                    break;
+                case "Other":
+                    element.innerHTML += `Date From <input type="date" name="employedFrom[]" min=${currMaxYear} value="" />
+                    Date To <input type="date" name="employedTo[]" min=${currMaxYear} value="" />
+                Reason For Other <textarea type="text" name="reasonForLeaving[]" value=""></textarea>
+                <input type="button" value="Add to table" onclick="addRow()" />`
+                    break;
+                default:
+                    // code block
+                    element.innerHTML = "" //empty
+            }
+        }
+
+
+
+        function addToTable(activityType) {
+            "use strict";
+            var table = document.getElementById("table");
+            console.log(document.getElementById("emEmployedFrom"))
+
+
+
+            if (activityType === "Employed") {
+                var row = document.createElement("tr");
+                console.log(row);
+                var td1 = document.createElement("td");
+                var td2 = document.createElement("td");
+                var td3 = document.createElement("td");
+                var td4 = document.createElement("td");
+                var td5 = document.createElement("td");
+                var td6 = document.createElement("td");
+
+                td1.innerHTML = document.getElementById("emNameOfEmployer")?.value;
+                td2.innerHTML = document.getElementById("emEmployedFrom")?.value;
+                td3.innerHTML = document.getElementById("emEmployedTo")?.value;
+                td4.innerHTML = document.getElementById("emNumberOfHoursWorked")?.value;
+                td5.innerHTML = document.getElementById("emDetailsOfPositionHeld")?.value;
+                td6.innerHTML = document.getElementById("emReasonForLeaving")?.value;
+
+                row.appendChild(td1);
+                row.appendChild(td2);
+                row.appendChild(td3);
+                row.appendChild(td4);
+                row.appendChild(td5);
+                row.appendChild(td6);
+
+                table.children[0].appendChild(row);
+            }
+        };
+
+        function fillConditionValue(data) {
+            var inputValue = data.value || '';
+            //input.val(inputValue.split(","));
+            inputValue = inputValue.split(",")
+            JFCustomWidget.hideWidgetError();
+            // console.log(inputValue[0])
+            // console.log(inputValue[1])
+            // jotFormDisplayName = JFCustomWidget.getWidgetSetting("displayName");
+
+            // callNSFASCheck(inputValue[0], jotFormDisplayName);
+
+            var data = {
+                value: value,
+                valid: valid
+            }
+
+            //console.log(data.value)
+            JFCustomWidget.sendData(data);
+        }
+
+        //subscrive to ready
+        JFCustomWidget.subscribe("ready", function (msg) {
+            console.log("ready message arrived from JotForm", msg);
+            //subscribe to submit
+            JFCustomWidget.subscribe("submit", function (msg) {
+                var data2 = {
+                    value: "",
+                    valid: true
+                }
+                console.log(data2)
+                JFCustomWidget.sendSubmit(data2);
+
+                // console.log(jotFormStudentName)
+                // console.log(jotFormDisplayName)
+            });
+
+            JFCustomWidget.subscribe('populate', fillConditionValue);
+
+        });
+    </script>
+</body>
+
+</html>

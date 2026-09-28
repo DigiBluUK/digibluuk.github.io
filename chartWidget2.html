@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.2.0/dist/chart.min.js"></script>
+
+    <script type="text/javascript">
+        (function () {
+            var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+            po.src = '//js.jotform.com/JotFormCustomWidget.min.js?onload=onLoadCallback';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+        })();
+    </script>
+    <style>
+    </style>
+</head>
+<style>
+</style>
+
+<body>
+    <style>
+        #chart-container {
+            /* position: relative; */
+            width: 100%;
+            /* Set the width of the container */
+            /* max-width: 400px; */
+            /* Set the maximum width of the container */
+        }
+    </style>
+    <div id="chart-container">
+        <canvas id="myDoughnutChart"></canvas>
+        <!-- <button onclick="updateChart()">Update Chart</button> -->
+    </div>
+    <script>
+        const ctx = document.getElementById('myDoughnutChart').getContext('2d');
+
+        const initialData = {
+            labels: ["Invested", "Profit"],
+            datasets: [
+                {
+                    data: [50, 50],
+                    backgroundColor: ["#FF5733", "#3498DB"],
+                },
+            ],
+        };
+
+        const myDoughnutChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: initialData,
+            options: {
+                responsive: true,
+                cutout: 350,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                onHover: (event, elements) => {
+                    if (elements.length > 0) {
+                        const hoveredIndex = elements[0].index;
+                        const value = initialData.datasets[0].data[hoveredIndex];
+                        const color = initialData.datasets[0].backgroundColor[hoveredIndex];
+                        updateHoveredValue(value, color);
+                    } else {
+                        updateHoveredValue(initialData.datasets[0].data[0], initialData.datasets[0].backgroundColor[0]);
+                    }
+                },
+            },
+            plugins: [{
+                id: 'text',
+                beforeDraw: function (chart, a, b) {
+                    var width = chart.width,
+                        height = chart.height,
+                        ctx = chart.ctx;
+
+                    ctx.restore();
+                    var fontSize = (height / 150).toFixed(2);
+                    ctx.font = fontSize + "em sans-serif";
+                    ctx.textBaseline = "middle";
+
+                    var text = chart.hoveredValue || initialData.datasets[0].data[0];
+                    var color = chart.hoveredColor || initialData.datasets[0].backgroundColor[0];
+
+                    ctx.fillStyle = color;
+                    var textX = Math.round((width - ctx.measureText(text).width) / 2),
+                        textY = height / 2;
+
+                    ctx.fillText(text, textX, textY);
+                    ctx.save();
+                }
+            }]
+        });
+
+        function updateHoveredValue(value, color) {
+            myDoughnutChart.hoveredValue = value;
+            myDoughnutChart.hoveredColor = color;
+            myDoughnutChart.update();
+        }
+
+        console.log("JFCustomWidget: ", JFCustomWidget)
+        var chartData = [];
+
+        JFCustomWidget.subscribe('populate', fillConditionValue);
+
+        function fillConditionValue(data) {
+            console.log(data)
+            const newData = data.value?.split(",");
+
+            console.log(newData)
+
+            const newValue1 = newData[0]
+            const newValue2 = newData[1]
+            myDoughnutChart.data.datasets[0].data = [newValue1, newValue2];
+            myDoughnutChart.update();
+        };
+
+        //subscrive to ready
+        JFCustomWidget.subscribe("ready", function (msg) {
+            console.log("Ready:", msg)
+        });
+
+        //subscribe to submit
+        JFCustomWidget.subscribe("submit", function (msg) {
+            var imageData = myDoughnutChart.toBase64Image();
+            var data2 = {
+                valid: true,
+                value: JFCustomWidgetUtils.buildMetadata(
+                    'imagelinks',
+                    [{
+                        'name': "ROI Chart",
+                        'base64': imageData
+                    }]
+                )
+            }
+            JFCustomWidget.sendSubmit(data2);
+        });
+    </script>
+</body>
+
+</html>
