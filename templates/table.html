@@ -1,0 +1,157 @@
+<!doctype html>
+<!--
+  TEMPLATE: Repeating table
+  A table with Add Row / Remove. Columns come from a setting. The value is saved
+  as an HTML table (htmltext metadata), so it shows as a table in Submissions,
+  emails and PDFs. The saved table is read back when a submission is edited.
+  Based on SOCWidget.html and experienceEducationWidgetV2.html.
+
+  User Parameters:
+    columns        - one column name per line (Textarea parameter)
+    totalColumn    - name of a numeric column to total (optional)
+    totalFieldId   - field to write that total into (optional)
+-->
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://js.jotform.com/JotFormCustomWidget.min.js"></script>
+    <link rel="stylesheet" href="https://digiblu.jotform.com/stylebuilder/static/form-common.css?v=3c1609c">
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 2px; overflow: hidden; }
+        .wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #c3cad8; padding: 4px; text-align: left; }
+        th { background: #f3f3fe; font-size: 13px; }
+        td input { width: 100%; border: 0; padding: 4px; font: inherit; }
+        .actions { margin-top: 8px; }
+        button { cursor: pointer; }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <table id="table">
+            <thead><tr id="headRow"></tr></thead>
+            <tbody id="body"></tbody>
+        </table>
+    </div>
+    <div class="actions"><button type="button" id="addRow" class="form-submit-button">Add Row</button></div>
+
+    <script>
+        "use strict";
+
+        var settings = {};
+        var columns = [];
+
+        function resizeFrame() {
+            JFCustomWidget.requestFrameResize({ height: document.body.scrollHeight });
+        }
+
+        function escapeHtml(s) {
+            return String(s).replace(/[&<>"']/g, function (c) {
+                return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+            });
+        }
+
+        // base64 that works with any characters (plain btoa() fails on £, é, etc.)
+        function toBase64(text) { return btoa(unescape(encodeURIComponent(text))); }
+        function fromBase64(b64) { return decodeURIComponent(escape(atob(b64))); }
+
+        function addRow(values) {
+            var tr = document.createElement("tr");
+            columns.forEach(function (col, i) {
+                var td = document.createElement("td");
+                var input = document.createElement("input");
+                input.setAttribute("aria-label", col);
+                input.value = values ? (values[i] || "") : "";
+                input.addEventListener("input", onChange);
+                td.appendChild(input);
+                tr.appendChild(td);
+            });
+            var tdBtn = document.createElement("td");
+            var remove = document.createElement("button");
+            remove.type = "button";
+            remove.textContent = "Remove";
+            remove.addEventListener("click", function () { tr.remove(); onChange(); });
+            tdBtn.appendChild(remove);
+            tr.appendChild(tdBtn);
+            document.getElementById("body").appendChild(tr);
+            resizeFrame();
+        }
+
+        function readRows() {
+            return Array.prototype.map.call(document.querySelectorAll("#body tr"), function (tr) {
+                return Array.prototype.map.call(tr.querySelectorAll("input"), function (i) { return i.value; });
+            }).filter(function (row) { return row.some(function (v) { return v.trim() !== ""; }); });
+        }
+
+        // Build the value Jotform saves: an HTML table wrapped as htmltext metadata.
+        function buildValue(rows) {
+            if (rows.length === 0) return "";
+            var head = "<tr>" + columns.map(function (c) { return "<th>" + escapeHtml(c) + "</th>"; }).join("") + "</tr>";
+            var body = rows.map(function (r) {
+                return "<tr>" + r.map(function (v) { return "<td>" + escapeHtml(v) + "</td>"; }).join("") + "</tr>";
+            }).join("");
+            var html = '<table style="width:100%;border-collapse:collapse" border="1"><tbody>' + head + body + "</tbody></table>";
+            return JFCustomWidgetUtils.buildMetadata("htmltext", toBase64(html));
+        }
+
+        // Read rows back out of a saved value (used when a submission is edited).
+        function parseSavedValue(saved) {
+            var html = fromBase64(JSON.parse(saved).widget_metadata.value);
+            var doc = new DOMParser().parseFromString(html, "text/html");
+            return Array.prototype.map.call(doc.querySelectorAll("tr"), function (tr) {
+                return Array.prototype.map.call(tr.querySelectorAll("td"), function (td) { return td.textContent; });
+            }).filter(function (r) { return r.length > 0; });
+        }
+
+        function updateTotal(rows) {
+            var col = columns.indexOf(settings.totalColumn);
+            if (col < 0 || !settings.totalFieldId) return;
+            var total = rows.reduce(function (sum, r) { return sum + (parseFloat(r[col]) || 0); }, 0);
+            JFCustomWidget.setFieldsValueById([{ id: settings.totalFieldId, value: total.toFixed(2) }]);
+        }
+
+        function onChange() {
+            var rows = readRows();
+            updateTotal(rows);
+            JFCustomWidget.sendData({ value: buildValue(rows) });
+            validate(rows);
+        }
+
+        function validate(rows) {
+            if (JFCustomWidget.isWidgetRequired() && rows.length === 0) {
+                JFCustomWidget.showWidgetError("Please add at least one row.");
+                return false;
+            }
+            JFCustomWidget.hideWidgetError();
+            return true;
+        }
+
+        JFCustomWidget.subscribe("ready", function (formData) {
+            settings = JFCustomWidget.getWidgetSettings() || {};
+            columns = (settings.columns || "Item\nAmount").split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
+
+            document.getElementById("headRow").innerHTML =
+                columns.map(function (c) { return "<th>" + escapeHtml(c) + "</th>"; }).join("") + "<th></th>";
+            document.getElementById("addRow").addEventListener("click", function () { addRow(); });
+
+            var restored = [];
+            if (formData && formData.value) {
+                try { restored = parseSavedValue(formData.value); } catch (e) { console.warn("Could not read saved table", e); }
+            }
+            if (restored.length) restored.forEach(addRow); else addRow();
+            resizeFrame();
+        });
+
+        JFCustomWidget.subscribe("submit", function () {
+            var rows = readRows();
+            JFCustomWidget.sendSubmit({ valid: validate(rows), value: buildValue(rows) });
+        });
+    </script>
+</body>
+
+</html>

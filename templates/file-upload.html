@@ -1,0 +1,118 @@
+<!doctype html>
+<!--
+  TEMPLATE: File upload to an API
+  The user picks a file. The widget sends it to an API (e.g. an AI extraction
+  service) and copies the answers into other fields on the form.
+  Based on DataExtractAI.html and SpeechToForm.html.
+
+  User Parameters:
+    apiUrl      - endpoint that accepts multipart/form-data with a "file" part
+    fieldMap    - one "fieldId=responseKey" per line, e.g.
+                    12=invoiceNumber
+                    13=totalAmount
+    accept      - allowed file types, e.g. "image/*,application/pdf" (optional)
+-->
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://js.jotform.com/JotFormCustomWidget.min.js"></script>
+    <link rel="stylesheet" href="https://digiblu.jotform.com/stylebuilder/static/form-common.css?v=3c1609c">
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 2px; overflow: hidden; }
+        #status { min-height: 18px; margin-top: 6px; }
+        .ok { color: #1a7f37; }
+        .error { color: #c62828; }
+    </style>
+</head>
+
+<body>
+    <div class="form-input-wide">
+        <input type="file" id="file" class="form-upload" aria-label="Choose a file">
+        <p id="status" class="form-sub-label" role="status"></p>
+    </div>
+
+    <script>
+        "use strict";
+
+        var settings = {};
+        var currentValue = "";   // saved with the submission: the file name that was processed
+        var statusEl = document.getElementById("status");
+
+        function resizeFrame() {
+            JFCustomWidget.requestFrameResize({ height: document.body.scrollHeight });
+        }
+
+        function showStatus(text, cls) {
+            statusEl.textContent = text;
+            statusEl.className = "form-sub-label " + (cls || "");
+            resizeFrame();
+        }
+
+        // "12=invoiceNumber\n13=total" -> [{ id: "12", key: "invoiceNumber" }, ...]
+        function readFieldMap() {
+            return (settings.fieldMap || "").split(/\r?\n/).map(function (line) {
+                var parts = line.split("=");
+                return { id: (parts[0] || "").trim(), key: (parts[1] || "").trim() };
+            }).filter(function (m) { return m.id && m.key; });
+        }
+
+        function upload(file) {
+            if (!settings.apiUrl) { showStatus("Widget setting 'apiUrl' is missing.", "error"); return; }
+
+            var body = new FormData();
+            body.append("file", file);
+            showStatus("Uploading " + file.name + "…");
+
+            fetch(settings.apiUrl, { method: "POST", body: body })   // let the browser set the multipart header
+                .then(function (res) {
+                    if (!res.ok) throw new Error("HTTP " + res.status);
+                    return res.json();
+                })
+                .then(function (json) {
+                    var updates = readFieldMap().map(function (m) {
+                        return { id: m.id, value: json[m.key] == null ? "" : String(json[m.key]) };
+                    });
+                    if (updates.length) JFCustomWidget.setFieldsValueById(updates);
+                    currentValue = file.name;
+                    JFCustomWidget.sendData({ value: currentValue });
+                    showStatus("Done. Please check the filled-in fields.", "ok");
+                    validate();
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    showStatus("Upload failed. Please try again or fill in the fields yourself.", "error");
+                });
+        }
+
+        function validate() {
+            if (JFCustomWidget.isWidgetRequired() && !currentValue) {
+                JFCustomWidget.showWidgetError("Please upload a file.");
+                return false;
+            }
+            JFCustomWidget.hideWidgetError();
+            return true;
+        }
+
+        JFCustomWidget.subscribe("ready", function (formData) {
+            settings = JFCustomWidget.getWidgetSettings() || {};
+            var input = document.getElementById("file");
+            if (settings.accept) input.accept = settings.accept;
+            input.addEventListener("change", function () { if (this.files[0]) upload(this.files[0]); });
+
+            if (formData && formData.value) {
+                currentValue = formData.value;
+                showStatus("Previously processed: " + currentValue);
+            }
+            resizeFrame();
+        });
+
+        JFCustomWidget.subscribe("submit", function () {
+            JFCustomWidget.sendSubmit({ valid: validate(), value: currentValue });
+        });
+    </script>
+</body>
+
+</html>

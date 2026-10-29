@@ -1,0 +1,102 @@
+<!doctype html>
+<!--
+  TEMPLATE: Option picker built from settings
+  Shows clickable tiles whose labels come from a widget setting.
+  Single or multiple choice. Based on IBCPickerWidget.html.
+
+  Covers: building the UI from multi-line settings, Yes/No settings,
+  restoring the saved selection, keyboard access.
+
+  User Parameters:
+    options        - one option per line (Textarea parameter)
+    allowMultiple  - "Yes" or "No" (settings always arrive as strings)
+-->
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://js.jotform.com/JotFormCustomWidget.min.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 2px; overflow: hidden; font-family: Inter, Arial, sans-serif; }
+        #options { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+        .option {
+            padding: 16px 8px; border: 1px solid #c3cad8; border-radius: 6px; background: #fff;
+            font: inherit; font-weight: 600; cursor: pointer; text-align: center;
+        }
+        .option:hover { border-color: #2e69ff; }
+        .option[aria-pressed="true"] { border: 2px solid #2e69ff; background: #eef3ff; }
+    </style>
+</head>
+
+<body>
+    <div id="options" role="group" aria-label="Options"></div>
+
+    <script>
+        "use strict";
+
+        var SEPARATOR = "; ";      // how multiple choices are joined in the saved value
+        var settings = {};
+        var selected = [];
+
+        function resizeFrame() {
+            JFCustomWidget.requestFrameResize({ height: document.body.scrollHeight });
+        }
+
+        function currentValue() {
+            return selected.join(SEPARATOR);
+        }
+
+        function render(labels) {
+            var container = document.getElementById("options");
+            container.innerHTML = "";
+            labels.forEach(function (label) {
+                var btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "option";
+                btn.textContent = label;
+                btn.setAttribute("aria-pressed", selected.indexOf(label) > -1 ? "true" : "false");
+                btn.addEventListener("click", function () { toggle(label); render(labels); });
+                container.appendChild(btn);
+            });
+            resizeFrame();
+        }
+
+        function toggle(label) {
+            var multiple = settings.allowMultiple === "Yes";
+            var i = selected.indexOf(label);
+            if (i > -1) selected.splice(i, 1);
+            else if (multiple) selected.push(label);
+            else selected = [label];
+            JFCustomWidget.sendData({ value: currentValue() });
+            validate();
+        }
+
+        function validate() {
+            if (JFCustomWidget.isWidgetRequired() && selected.length === 0) {
+                JFCustomWidget.showWidgetError("Please choose an option.");
+                return false;
+            }
+            JFCustomWidget.hideWidgetError();
+            return true;
+        }
+
+        JFCustomWidget.subscribe("ready", function (formData) {
+            settings = JFCustomWidget.getWidgetSettings() || {};
+            var labels = (settings.options || "")
+                .split(/\r?\n/)
+                .map(function (s) { return s.trim(); })
+                .filter(Boolean);
+
+            if (formData && formData.value) selected = formData.value.split(SEPARATOR);
+            render(labels);
+        });
+
+        JFCustomWidget.subscribe("submit", function () {
+            JFCustomWidget.sendSubmit({ valid: validate(), value: currentValue() });
+        });
+    </script>
+</body>
+
+</html>

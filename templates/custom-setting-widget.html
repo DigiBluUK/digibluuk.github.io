@@ -1,0 +1,117 @@
+<!doctype html>
+<!--
+  TEMPLATE: Custom setting (widget)
+  Use with custom-setting-page.html.
+
+  The widget reads the object saved by the settings page from the User Parameter
+  named in PARAM_NAME below, and builds a dropdown from it: either the list
+  typed into the settings page, or a list loaded from an API.
+  Based on the EEL AD Widget, which reads getWidgetSettings().selectedBehaviour.
+
+  User Parameters:
+    config  - the custom setting (its input is custom-setting-page.html).
+              The name must match PARAM_NAME exactly.
+-->
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://js.jotform.com/JotFormCustomWidget.min.js"></script>
+    <link rel="stylesheet" href="https://digiblu.jotform.com/stylebuilder/static/form-common.css?v=3c1609c">
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 2px; overflow: hidden; }
+        select { width: 100%; }
+        #label { display: block; margin-bottom: 4px; font-weight: 600; }
+        #status { min-height: 18px; margin-top: 4px; }
+        .error { color: #c62828; }
+    </style>
+</head>
+
+<body>
+    <div class="form-input-wide">
+        <label id="label" for="choice"></label>
+        <select id="choice" class="form-dropdown" disabled>
+            <option value="">Loading…</option>
+        </select>
+        <p id="status" class="form-sub-label" role="status"></p>
+    </div>
+
+    <script>
+        "use strict";
+
+        var PARAM_NAME = "config";   // must match the User Parameter name in the registration
+        var config = {};
+        var currentValue = "";
+        var select = document.getElementById("choice");
+        var statusEl = document.getElementById("status");
+
+        function resizeFrame() {
+            JFCustomWidget.requestFrameResize({ height: document.body.scrollHeight });
+        }
+
+        function showStatus(text, cls) {
+            statusEl.textContent = text;
+            statusEl.className = "form-sub-label " + (cls || "");
+            resizeFrame();
+        }
+
+        // The saved value usually arrives as an object, but handle a JSON string too.
+        function readConfig() {
+            var raw = (JFCustomWidget.getWidgetSettings() || {})[PARAM_NAME];
+            if (!raw) return {};
+            if (typeof raw === "object") return raw;
+            try { return JSON.parse(raw); } catch (e) { return {}; }
+        }
+
+        function fill(items) {
+            select.innerHTML = "";
+            select.appendChild(new Option("Please Select", ""));
+            items.forEach(function (item) { select.appendChild(new Option(item, item)); });
+            select.disabled = false;
+            if (currentValue) select.value = currentValue;
+            resizeFrame();
+        }
+
+        function loadItems() {
+            if (config.mode === "list") {
+                fill(config.items || []);
+            } else if (config.mode === "api" && config.apiUrl) {
+                fetch(config.apiUrl)
+                    .then(function (res) { if (!res.ok) throw new Error("HTTP " + res.status); return res.json(); })
+                    .then(function (json) { fill(Array.isArray(json) ? json.map(String) : []); })
+                    .catch(function (err) { console.error(err); showStatus("Could not load the options.", "error"); });
+            } else {
+                showStatus("This widget has not been set up yet. Open its settings in the Form Builder.", "error");
+            }
+        }
+
+        function validate() {
+            if (JFCustomWidget.isWidgetRequired() && !currentValue) {
+                JFCustomWidget.showWidgetError("This field is required.");
+                return false;
+            }
+            JFCustomWidget.hideWidgetError();
+            return true;
+        }
+
+        JFCustomWidget.subscribe("ready", function (formData) {
+            config = readConfig();
+            currentValue = (formData && formData.value) || "";
+            document.getElementById("label").textContent = config.label || "";
+            select.addEventListener("change", function () {
+                currentValue = this.value;
+                JFCustomWidget.sendData({ value: currentValue });
+                validate();
+            });
+            loadItems();
+        });
+
+        JFCustomWidget.subscribe("submit", function () {
+            JFCustomWidget.sendSubmit({ valid: validate(), value: currentValue });
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,175 @@
+<!doctype html>
+<!--
+  TEMPLATE: Custom setting (settings page)
+  Use with custom-setting-widget.html.
+
+  A custom setting is a User Parameter whose input is your own web page instead
+  of a plain text box. Jotform shows this page in the widget's settings panel in
+  the Form Builder. Whatever the page saves becomes that parameter's value, and
+  the widget reads it with JFCustomWidget.getWidgetSettings()["<parameter name>"].
+  Use it when a setting is too complex for a text box: choices that show or hide
+  other inputs, lists of tags, several related values.
+  Based on EEL's ADWidgetSettings.html (parameter "selectedBehaviour").
+
+  How it talks to Jotform (for-widgets-client.js / JFExternalWidgetParamsClient):
+    - Jotform opens the page with ?qid=…&name=…&ref=… in the URL. "name" is the
+      parameter this page saves to (available as client.name).
+    - subscribe("ready", cb): cb({ value }) gives the saved value. It can be an
+      object, a JSON string, or empty. Before anything is saved it may be a URL
+      string, which ADWidgetSettings.html treats as "nothing saved".
+    - sendParamData({ value }): saves the value. Call it on EVERY change. The
+      library only ever sends "ready", so a "submit" handler never runs.
+    - requestFrameResize(height): height in pixels (a number, not an object).
+
+  This example saves an object like:
+    { "mode": "list", "items": ["Leeds", "York"], "apiUrl": "", "label": "Office" }
+-->
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Settings pages use the params client, not JotFormCustomWidget.min.js -->
+    <script src="https://cdn.jotfor.ms/s/umd/latest/for-widgets-client.js"></script>
+    <style>
+        /* Colours match the dark settings panel in the Jotform Form Builder */
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            background: #33384a;
+            color: #fff;
+            font-family: Circular, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 14px;
+        }
+        #panel { padding: 4px 2px 10px; }
+        label, .label { display: block; margin: 12px 0 6px; font-weight: 500; }
+        .hint { color: #b6bccf; font-size: 12px; margin-top: 4px; }
+        select, input[type=text], input[type=url] {
+            width: 100%; height: 38px; padding: 0 10px; border: 1px solid #5d6274; border-radius: 4px;
+            background: #454b5f; color: #fff; font: inherit;
+        }
+        select:focus, input:focus { outline: none; border-color: #78bbfa; }
+        .hidden { display: none; }
+        .tags {
+            display: flex; flex-wrap: wrap; gap: 6px; padding: 6px; min-height: 38px;
+            border: 1px solid #5d6274; border-radius: 4px; background: #454b5f;
+        }
+        .tag { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; border-radius: 3px; background: #0075e3; }
+        .tag button { border: 0; background: none; color: #fff; cursor: pointer; font-size: 15px; line-height: 1; padding: 0; }
+        .tags input { flex: 1; min-width: 140px; border: 0; background: transparent; color: #fff; font: inherit; height: 26px; }
+        .tags input:focus { outline: none; }
+    </style>
+</head>
+
+<body>
+    <div id="panel">
+        <label for="mode">Where do the options come from?</label>
+        <select id="mode">
+            <option value="">Choose…</option>
+            <option value="list">A list I type here</option>
+            <option value="api">An API</option>
+        </select>
+
+        <div id="section-list" class="hidden">
+            <span class="label">Options</span>
+            <div class="tags" id="tags">
+                <input type="text" id="tagInput" placeholder="Type an option and press Enter" aria-label="New option">
+            </div>
+        </div>
+
+        <div id="section-api" class="hidden">
+            <label for="apiUrl">API URL</label>
+            <input type="url" id="apiUrl" placeholder="https://…">
+            <div class="hint">Must return a JSON array of strings.</div>
+        </div>
+
+        <label for="label">Label shown above the dropdown</label>
+        <input type="text" id="label" placeholder="e.g. Office">
+    </div>
+
+    <script>
+        "use strict";
+
+        var client = window.JFExternalWidgetParamsClient;
+        var settings = { mode: "", items: [], apiUrl: "", label: "" };
+
+        function resize() {
+            client.requestFrameResize(document.getElementById("panel").offsetHeight + 10);
+        }
+
+        // Turn whatever Jotform gives back into a settings object.
+        function readSaved(value) {
+            if (!value) return {};
+            if (typeof value === "object") return value;
+            if (/^https?:\/\//.test(value)) return {};   // nothing saved yet
+            try { return JSON.parse(value); } catch (e) { return {}; }
+        }
+
+        // Save on every change: there is no "submit" event for settings pages.
+        function save() {
+            client.sendParamData({ value: settings.mode ? settings : "" });
+            resize();
+        }
+
+        function showSection() {
+            document.getElementById("section-list").classList.toggle("hidden", settings.mode !== "list");
+            document.getElementById("section-api").classList.toggle("hidden", settings.mode !== "api");
+            resize();
+        }
+
+        function renderTags() {
+            var box = document.getElementById("tags");
+            var input = document.getElementById("tagInput");
+            box.querySelectorAll(".tag").forEach(function (t) { t.remove(); });
+            settings.items.forEach(function (item, i) {
+                var tag = document.createElement("span");
+                tag.className = "tag";
+                tag.textContent = item;
+                var remove = document.createElement("button");
+                remove.type = "button";
+                remove.textContent = "×";
+                remove.setAttribute("aria-label", "Remove " + item);
+                remove.addEventListener("click", function () { settings.items.splice(i, 1); renderTags(); save(); });
+                tag.appendChild(remove);
+                box.insertBefore(tag, input);
+            });
+            resize();
+        }
+
+        client.subscribe("ready", function (data) {
+            var saved = readSaved(data && data.value);
+            settings = {
+                mode: saved.mode || "",
+                items: Array.isArray(saved.items) ? saved.items : [],
+                apiUrl: saved.apiUrl || "",
+                label: saved.label || ""
+            };
+
+            var mode = document.getElementById("mode");
+            var apiUrl = document.getElementById("apiUrl");
+            var label = document.getElementById("label");
+            var tagInput = document.getElementById("tagInput");
+
+            mode.value = settings.mode;
+            apiUrl.value = settings.apiUrl;
+            label.value = settings.label;
+            renderTags();
+            showSection();
+
+            mode.addEventListener("change", function () { settings.mode = this.value; showSection(); save(); });
+            apiUrl.addEventListener("input", function () { settings.apiUrl = this.value.trim(); save(); });
+            label.addEventListener("input", function () { settings.label = this.value; save(); });
+            tagInput.addEventListener("keydown", function (e) {
+                if (e.key === "Enter" && this.value.trim()) {
+                    e.preventDefault();
+                    settings.items.push(this.value.trim());
+                    this.value = "";
+                    renderTags();
+                    save();
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

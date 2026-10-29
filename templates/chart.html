@@ -1,0 +1,105 @@
+<!doctype html>
+<!--
+  TEMPLATE: Chart (saved as an image)
+  Draws a Chart.js chart from data pushed in by a form condition and saves the
+  chart as an image with the submission. Based on ROIChartWidget.html.
+
+  How to feed it: add a condition "Update/Calculate field" targeting this widget,
+  with a value like   Costs:100,200,300;Savings:50,250,400;Labels:Y1,Y2,Y3
+  (each part is Name:comma,separated,values; "Labels" sets the x-axis).
+
+  User Parameters:
+    title   - chart title (optional)
+-->
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://js.jotform.com/JotFormCustomWidget.min.js"></script>
+    <!-- Pin the Chart.js version so the chart does not change by itself -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        body { margin: 0; padding: 2px; overflow: hidden; background: #fff; font-family: Arial, sans-serif; }
+        #chartBox { position: relative; width: 100%; height: 320px; }
+    </style>
+</head>
+
+<body>
+    <div id="chartBox"><canvas id="chart" aria-label="Chart" role="img"></canvas></div>
+
+    <script>
+        "use strict";
+
+        var COLOURS = ["#b4d3f8", "#0f5dbd", "#f2a541", "#4caf50"];
+        var hasData = false;
+
+        var chart = new Chart(document.getElementById("chart"), {
+            type: "bar",
+            data: { labels: [], datasets: [] },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 600 },
+                plugins: { legend: { position: "top" }, title: { display: false, text: "" } },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+
+        function resizeFrame() {
+            JFCustomWidget.requestFrameResize({ height: document.body.scrollHeight });
+        }
+
+        // "A:1,2;B:3,4;Labels:x,y" -> { labels: ["x","y"], series: [{name:"A", data:[1,2]}, ...] }
+        function parse(text) {
+            var result = { labels: null, series: [] };
+            String(text || "").split(";").forEach(function (part) {
+                var i = part.indexOf(":");
+                if (i < 0) return;
+                var name = part.slice(0, i).trim();
+                var values = part.slice(i + 1).split(",").map(function (v) { return v.trim(); });
+                if (name === "Labels") result.labels = values;
+                else result.series.push({ name: name, data: values.map(Number) });
+            });
+            return result;
+        }
+
+        function draw(text) {
+            var parsed = parse(text);
+            var length = parsed.series.length ? parsed.series[0].data.length : 0;
+            chart.data.labels = parsed.labels || Array.from({ length: length }, function (_, i) { return String(i + 1); });
+            chart.data.datasets = parsed.series.map(function (s, i) {
+                return { label: s.name, data: s.data, backgroundColor: COLOURS[i % COLOURS.length] };
+            });
+            chart.update();
+            hasData = parsed.series.length > 0;
+            resizeFrame();
+        }
+
+        JFCustomWidget.subscribe("ready", function () {
+            var settings = JFCustomWidget.getWidgetSettings() || {};
+            if (settings.title) {
+                chart.options.plugins.title = { display: true, text: settings.title };
+                chart.update();
+            }
+            resizeFrame();
+        });
+
+        JFCustomWidget.subscribe("populate", function (data) {
+            draw(data && data.value);
+        });
+
+        // Save the chart as a picture. "imagelinks" metadata shows it as an image in Submissions and PDFs.
+        JFCustomWidget.subscribe("submit", function () {
+            if (!hasData) {
+                JFCustomWidget.sendSubmit({ valid: !JFCustomWidget.isWidgetRequired(), value: "" });
+                return;
+            }
+            chart.options.animation = false;
+            var value = JFCustomWidgetUtils.buildMetadata("imagelinks", [{ name: "Chart", base64: chart.toBase64Image() }]);
+            JFCustomWidget.sendSubmit({ valid: true, value: value });
+        });
+    </script>
+</body>
+
+</html>

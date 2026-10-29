@@ -1,0 +1,136 @@
+<!doctype html>
+<!--
+  TEMPLATE: Dropdown filled from an API
+  Loads a list from an API when the form opens, lets the user pick one,
+  saves the choice and copies details of the chosen item into other fields.
+  Based on CourseLookupDropDownWidget.html and the EEL AD widget.
+
+  Covers: loading / empty / error states, restoring the saved choice when a
+  submission is edited, writing several fields by ID.
+
+  User Parameters:
+    apiUrl         - GET endpoint returning a JSON array (see readItems())
+    nameFieldId    - field to fill with the chosen item's name (optional)
+    emailFieldId   - field to fill with the chosen item's email (optional)
+-->
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://js.jotform.com/JotFormCustomWidget.min.js"></script>
+    <link rel="stylesheet" href="https://digiblu.jotform.com/stylebuilder/static/form-common.css?v=3c1609c">
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 2px; overflow: hidden; }
+        select { width: 100%; }
+        #status { min-height: 18px; margin-top: 4px; }
+        .error { color: #c62828; }
+    </style>
+</head>
+
+<body>
+    <div class="form-input-wide">
+        <select id="choice" class="form-dropdown" aria-label="Choose an option" disabled>
+            <option value="">Loading…</option>
+        </select>
+        <p id="status" class="form-sub-label" role="status"></p>
+    </div>
+
+    <script>
+        "use strict";
+
+        var settings = {};
+        var items = [];          // items returned by the API
+        var currentValue = "";
+        var select = document.getElementById("choice");
+        var statusEl = document.getElementById("status");
+
+        function resizeFrame() {
+            JFCustomWidget.requestFrameResize({ height: document.body.scrollHeight });
+        }
+
+        function showStatus(text, cls) {
+            statusEl.textContent = text;
+            statusEl.className = "form-sub-label " + (cls || "");
+            resizeFrame();
+        }
+
+        // ---- change this to match your API: return [{ value, label, ...extra }] ----
+        function readItems(json) {
+            return (json || []).map(function (row) {
+                return { value: row.id, label: row.id + " - " + row.name, name: row.name, email: row.email };
+            });
+        }
+        // -----------------------------------------------------------------------------
+
+        function buildOptions(restoreValue) {
+            select.innerHTML = "";
+            select.appendChild(new Option("Please Select", ""));
+            items.forEach(function (item) { select.appendChild(new Option(item.label, item.value)); });
+            select.disabled = false;
+            if (restoreValue) select.value = restoreValue;
+        }
+
+        function choose(value) {
+            currentValue = value || "";
+            JFCustomWidget.sendData({ value: currentValue });
+
+            var item = items.find(function (i) { return String(i.value) === String(currentValue); });
+            var updates = [];
+            if (settings.nameFieldId) updates.push({ id: settings.nameFieldId, value: item ? item.name : "" });
+            if (settings.emailFieldId) updates.push({ id: settings.emailFieldId, value: item ? item.email : "" });
+            if (updates.length) JFCustomWidget.setFieldsValueById(updates);
+            validate();
+        }
+
+        function load(restoreValue) {
+            if (!settings.apiUrl) { showStatus("Widget setting 'apiUrl' is missing.", "error"); return; }
+            fetch(settings.apiUrl)
+                .then(function (res) {
+                    if (!res.ok) throw new Error("HTTP " + res.status);
+                    return res.json();
+                })
+                .then(function (json) {
+                    items = readItems(json);
+                    buildOptions(restoreValue);
+                    showStatus(items.length ? "" : "No options found.");
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    select.innerHTML = "<option value=''>Unavailable</option>";
+                    showStatus("Could not load the options. Please try again later.", "error");
+                });
+        }
+
+        function validate() {
+            if (JFCustomWidget.isWidgetRequired() && !currentValue) {
+                JFCustomWidget.showWidgetError("This field is required.");
+                return false;
+            }
+            JFCustomWidget.hideWidgetError();
+            return true;
+        }
+
+        JFCustomWidget.subscribe("ready", function (formData) {
+            settings = JFCustomWidget.getWidgetSettings() || {};
+            currentValue = (formData && formData.value) || "";
+            select.addEventListener("change", function () { choose(this.value); });
+            load(currentValue);
+            resizeFrame();
+        });
+
+        // A condition can pre-select an option by pushing its value in.
+        JFCustomWidget.subscribe("populate", function (data) {
+            var value = (data && data.value) || "";
+            select.value = value;
+            choose(select.value);
+        });
+
+        JFCustomWidget.subscribe("submit", function () {
+            JFCustomWidget.sendSubmit({ valid: validate(), value: currentValue });
+        });
+    </script>
+</body>
+
+</html>

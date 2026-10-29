@@ -1,0 +1,95 @@
+<!doctype html>
+<!--
+  TEMPLATE: Basic input widget
+  A single text input whose value is saved with the submission.
+  Start here for any widget that collects one value.
+
+  Covers: ready / populate / submit, restoring a saved value,
+  required validation, resizing the iframe, reading settings.
+
+  User Parameters (set when registering the widget):
+    placeholder  - text shown in the empty input (optional)
+-->
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Load the Jotform library once. It provides JFCustomWidget and JFCustomWidgetUtils. -->
+    <script src="https://js.jotform.com/JotFormCustomWidget.min.js"></script>
+    <!-- Jotform's own field styles, so the widget looks like a native field -->
+    <link rel="stylesheet" href="https://digiblu.jotform.com/stylebuilder/static/form-common.css?v=3c1609c">
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 2px; overflow: hidden; font-family: inherit; }
+        .form-textbox { width: 100%; }
+    </style>
+</head>
+
+<body>
+    <div id="widget" class="form-input-wide">
+        <input type="text" id="valueInput" class="form-textbox" aria-label="Value">
+    </div>
+
+    <script>
+        "use strict";
+
+        var settings = {};
+        var currentValue = "";
+
+        // Tell Jotform how tall the widget is. Call this whenever the content changes size.
+        function resizeFrame() {
+            JFCustomWidget.requestFrameResize({ height: document.body.scrollHeight });
+        }
+
+        function isEmpty(value) {
+            return value === undefined || value === null || String(value).trim() === "";
+        }
+
+        // Store the value, show it, and tell Jotform about it straight away.
+        function setValue(value) {
+            currentValue = isEmpty(value) ? "" : String(value);
+            document.getElementById("valueInput").value = currentValue;
+            JFCustomWidget.sendData({ value: currentValue });
+            validate();
+        }
+
+        // Returns true when the widget can be submitted. Shows or hides the error message.
+        function validate() {
+            if (JFCustomWidget.isWidgetRequired() && isEmpty(currentValue)) {
+                JFCustomWidget.showWidgetError("This field is required.");
+                return false;
+            }
+            JFCustomWidget.hideWidgetError();
+            return true;
+        }
+
+        // 1. READY: fires once, when the form and this iframe have loaded.
+        //    formData.value holds the saved value when a submission is being edited.
+        JFCustomWidget.subscribe("ready", function (formData) {
+            settings = JFCustomWidget.getWidgetSettings() || {};   // User Parameters (all values are strings)
+
+            var input = document.getElementById("valueInput");
+            input.placeholder = settings.placeholder || "";
+            input.addEventListener("input", function () { setValue(this.value); });
+
+            if (!isEmpty(formData && formData.value)) {
+                setValue(formData.value);   // restore saved value
+            }
+            resizeFrame();
+        });
+
+        // 2. POPULATE: fires when a form condition (e.g. "Update/Calculate field") pushes a value in.
+        JFCustomWidget.subscribe("populate", function (data) {
+            setValue(data && data.value);
+        });
+
+        // 3. SUBMIT: fires on Submit, and on Next on multi-page forms.
+        //    valid:false stops the submit; value is what Jotform saves (must be a string).
+        JFCustomWidget.subscribe("submit", function () {
+            JFCustomWidget.sendSubmit({ valid: validate(), value: currentValue });
+        });
+    </script>
+</body>
+
+</html>

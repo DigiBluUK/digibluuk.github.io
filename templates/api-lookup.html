@@ -1,0 +1,158 @@
+<!doctype html>
+<!--
+  TEMPLATE: API lookup / validation widget
+  The user types (or a condition pushes in) a code. The widget calls an API,
+  shows the result, saves it as its value and copies parts of it into other fields.
+  Based on the EEL Location widget and IBCClientIdLookUp.html.
+
+  Covers: settings-driven API URL and field IDs, debounce, ignoring stale
+  responses, loading / success / error states, writing other fields.
+
+  User Parameters:
+    apiUrl         - endpoint that accepts POST { "code": "..." } and returns JSON
+    targetFieldId  - ID of a field to fill with the result (optional)
+  Change buildRequest() and readResponse() to match your API.
+
+  Never put API keys in this file: it is public. Use an endpoint that is safe to call from a browser.
+-->
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://js.jotform.com/JotFormCustomWidget.min.js"></script>
+    <link rel="stylesheet" href="https://digiblu.jotform.com/stylebuilder/static/form-common.css?v=3c1609c">
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 2px; overflow: hidden; }
+        .row { display: flex; gap: 8px; }
+        .row .form-textbox { flex: 1; }
+        #status { min-height: 18px; margin-top: 4px; }
+        .ok { color: #1a7f37; }
+        .error { color: #c62828; }
+    </style>
+</head>
+
+<body>
+    <div class="form-input-wide">
+        <div class="row">
+            <input type="text" id="codeInput" class="form-textbox" placeholder="Enter a code" aria-label="Code">
+            <input type="text" id="resultOutput" class="form-textbox" placeholder="Result" aria-label="Result" readonly>
+        </div>
+        <p id="status" class="form-sub-label" role="status"></p>
+    </div>
+
+    <script>
+        "use strict";
+
+        var settings = {};
+        var currentValue = "";
+        var debounceTimer = null;
+        var latestRequestId = 0;
+
+        var codeInput = document.getElementById("codeInput");
+        var resultOutput = document.getElementById("resultOutput");
+        var statusEl = document.getElementById("status");
+
+        function resizeFrame() {
+            JFCustomWidget.requestFrameResize({ height: document.body.scrollHeight });
+        }
+
+        function showStatus(text, cls) {
+            statusEl.textContent = text;
+            statusEl.className = "form-sub-label " + (cls || "");
+            resizeFrame();
+        }
+
+        function setValue(value) {
+            currentValue = value || "";
+            resultOutput.value = currentValue;
+            JFCustomWidget.sendData({ value: currentValue });
+            if (settings.targetFieldId) {
+                JFCustomWidget.setFieldsValueById([{ id: settings.targetFieldId, value: currentValue }]);
+            }
+        }
+
+        // ---- change these two to match your API -------------------------
+        function buildRequest(code) {
+            return {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ code: code })
+            };
+        }
+        function readResponse(json) {
+            return json.name;   // the text to show and save
+        }
+        // ------------------------------------------------------------------
+
+        // Wait until the user stops typing before calling the API.
+        function lookupSoon(code) {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(function () { lookup(code); }, 600);
+        }
+
+        function lookup(code) {
+            code = (code || "").trim();
+            if (!code) { setValue(""); showStatus(""); return; }
+            if (!settings.apiUrl) { showStatus("Widget setting 'apiUrl' is missing.", "error"); return; }
+
+            var requestId = ++latestRequestId;
+            showStatus("Checking…");
+
+            fetch(settings.apiUrl, buildRequest(code))
+                .then(function (res) {
+                    if (!res.ok) throw new Error("HTTP " + res.status);
+                    return res.json();
+                })
+                .then(function (json) {
+                    if (requestId !== latestRequestId) return;   // a newer request has started
+                    var result = readResponse(json);
+                    if (!result) throw new Error("Not found");
+                    setValue(result);
+                    showStatus("Found", "ok");
+                    validate();
+                })
+                .catch(function (err) {
+                    if (requestId !== latestRequestId) return;
+                    console.error(err);
+                    setValue("");
+                    showStatus("Not found. Check the code and try again.", "error");
+                });
+        }
+
+        function validate() {
+            if (JFCustomWidget.isWidgetRequired() && !currentValue) {
+                JFCustomWidget.showWidgetError("Please enter a valid code.");
+                return false;
+            }
+            JFCustomWidget.hideWidgetError();
+            return true;
+        }
+
+        JFCustomWidget.subscribe("ready", function (formData) {
+            settings = JFCustomWidget.getWidgetSettings() || {};
+            codeInput.addEventListener("input", function () { lookupSoon(this.value); });
+
+            // Editing a submission: show the saved result without calling the API again.
+            if (formData && formData.value) {
+                currentValue = formData.value;
+                resultOutput.value = formData.value;
+            }
+            resizeFrame();
+        });
+
+        // A condition can push the code in, e.g. from another field.
+        JFCustomWidget.subscribe("populate", function (data) {
+            var code = (data && data.value) || "";
+            codeInput.value = code;
+            lookupSoon(code);
+        });
+
+        JFCustomWidget.subscribe("submit", function () {
+            JFCustomWidget.sendSubmit({ valid: validate(), value: currentValue });
+        });
+    </script>
+</body>
+
+</html>

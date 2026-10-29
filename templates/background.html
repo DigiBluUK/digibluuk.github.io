@@ -1,0 +1,71 @@
+<!doctype html>
+<!--
+  TEMPLATE: Background helper (no visible UI)
+  Does work behind the scenes: reads fields, or takes a value pushed in by a
+  condition, works something out (or calls an API) and writes the result into
+  another field. Based on FormClassification.html and PrefillHandler.html.
+
+  Tip: register it with a small height (e.g. 1) and hide the field label,
+  or hide the whole field with a form condition.
+
+  User Parameters:
+    sourceFieldId  - field to read when the form opens (optional)
+    targetFieldId  - field to write the result into
+-->
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <script src="https://js.jotform.com/JotFormCustomWidget.min.js"></script>
+    <style>body { margin: 0; }</style>
+</head>
+
+<body>
+    <script>
+        "use strict";
+
+        var settings = {};
+        var lastResult = "";
+
+        // ---- put your logic here (can return a Promise if it calls an API) ----
+        function work(input) {
+            return String(input || "").trim().toUpperCase();
+        }
+        // ------------------------------------------------------------------------
+
+        function run(input) {
+            Promise.resolve(work(input))
+                .then(function (result) {
+                    lastResult = result == null ? "" : String(result);
+                    if (settings.targetFieldId) {
+                        JFCustomWidget.setFieldsValueById([{ id: settings.targetFieldId, value: lastResult }]);
+                    }
+                    JFCustomWidget.sendData({ value: lastResult });
+                })
+                .catch(function (err) { console.error("Background widget failed", err); });
+        }
+
+        JFCustomWidget.subscribe("ready", function () {
+            settings = JFCustomWidget.getWidgetSettings() || {};
+            JFCustomWidget.requestFrameResize({ height: 0 });
+
+            if (settings.sourceFieldId) {
+                JFCustomWidget.getFieldsValueById([settings.sourceFieldId], function (res) {
+                    var value = res && res.data && res.data[0] ? res.data[0].value : "";
+                    if (value) run(value);
+                });
+            }
+        });
+
+        // Fires when a condition such as "Update/Calculate field" sends a value to this widget.
+        JFCustomWidget.subscribe("populate", function (data) {
+            run(data && data.value);
+        });
+
+        JFCustomWidget.subscribe("submit", function () {
+            JFCustomWidget.sendSubmit({ valid: true, value: lastResult });
+        });
+    </script>
+</body>
+
+</html>
